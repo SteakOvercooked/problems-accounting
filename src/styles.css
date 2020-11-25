@@ -1,0 +1,40 @@
+body {
+    margin: 0;
+}
+
+#nav_upper {
+    height: 22px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    background-color: #23272a;
+    -webkit-app-region: drag;
+}
+
+.cntrl_wrapper {
+    height: 100%;
+    width: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #23272a;
+    -webkit-app-region: no-drag;
+}
+
+.cntrl {
+    height: 60%;
+    width: 40%;
+    fill: #d6d6d6;
+}
+
+.cntrl_wrapper:hover {
+    background-color: #2c2f33;
+}
+
+#close_app:hover {
+    background-color: #ff3636;
+}
+
+.cntrl_wrapper:hover .cntrl {
+    fill: #ffffff;
+}
