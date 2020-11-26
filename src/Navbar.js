@@ -1,25 +1,19 @@
 import React from 'react'
-import ClosePic from '../static/images/close.svg'
-import MaximizePic from '../static/images/maximize.svg'
-import MinimizePic from '../static/images/minimize.svg'
+import AddItem from '../static/images/add_item.svg'
+import MakeReport from '../static/images/make_report.svg'
+import Settings from '../static/images/settings.svg'
 
 class Navbar extends React.Component {
-    constructor(props){
+    constructor(props) {
         super(props)
     }
 
     render() {
         return (
-            <div id="nav_upper">
-                <div id="minimize_app" className="cntrl_wrapper">
-                    <MinimizePic className="cntrl"/>
-                </div>
-                <div id="maximize_app" className="cntrl_wrapper">
-                    <MaximizePic className="cntrl"/>
-                </div>
-                <div id="close_app" className="cntrl_wrapper">
-                    <ClosePic className="cntrl cntrl_close"/>
-                </div>
+            <div className="navbar">             
+                    <AddItem id="add_item" className="btn_nav" />
+                    <MakeReport id="make_report" className="btn_nav" />
+                    <Settings id="settings" className="btn_na" />
             </div>
         )
     }

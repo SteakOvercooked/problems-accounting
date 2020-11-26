@@ -1,11 +1,14 @@
-const { app, BrowserWindow, ipcMain, Main } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 
 let MainWindow;
 function createMainWindow() {
     MainWindow = new BrowserWindow({
         width: 1366,
         height: 768,
+        minWidth: 1200,
+        minHeight: 500,
         frame: false,
+        icon: './static/images/app_icon_64x64.ico',
         webPreferences: {
             nodeIntegration: true
         }

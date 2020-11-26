@@ -1,7 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { Navbar } from './Navbar.js'
+import { ControlBar } from './ControlBar.js'
 import { ipcRenderer } from 'electron'
+import { Navbar } from './Navbar.js'
+import { Content } from './Content.js'
 
 class App extends React.Component {
     constructor(props) {
@@ -10,7 +12,13 @@ class App extends React.Component {
 
     render() {
         return (
-            <Navbar />
+            <div id="main_content">
+                <ControlBar />
+                <div id="nav_cont_wrapper">
+                <Navbar />
+                <Content />
+                </div>
+            </div>
         )
     }
 }
