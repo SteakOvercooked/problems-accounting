@@ -15,6 +15,7 @@ function createMainWindow() {
     })
 
     MainWindow.loadFile('index.html')
+    MainWindow.webContents.toggleDevTools()
 }
 app.on('ready', createMainWindow)
 
