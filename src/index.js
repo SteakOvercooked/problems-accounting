@@ -12,6 +12,7 @@ class App extends React.Component {
         this.state = {
             fileToRender: 'index.html'
         }
+        this.Classificator = this.props.classificator
     }
 
     componentDidMount() {
@@ -37,7 +38,6 @@ class App extends React.Component {
                 fileToRender: 'addUserForm.html'
             })
         })
-        
     }
 
     componentDidUpdate() {
@@ -47,17 +47,6 @@ class App extends React.Component {
             .addEventListener('click', () => {
                 this.setState({
                     fileToRender: 'index.html'
-                })
-            })
-
-            document.querySelectorAll('.select_input')
-            .forEach(item => {
-                item.addEventListener('focusin', () => {
-                    item.parentElement.classList.toggle('focused')
-                })
-
-                item.addEventListener('focusout', () => {
-                    item.parentElement.classList.toggle('focused')
                 })
             })
         }
@@ -99,11 +88,14 @@ class App extends React.Component {
                 </div>
                 }
                 {this.state.fileToRender === 'addUserForm.html' &&
-                <AddUserForm />
+                <AddUserForm classif={this.Classificator}/>
                 }
             </div>
         )
     }
 }
 
-ReactDOM.render(<App />, document.getElementById('main'))
+ipcRenderer.on('classificator', (e, result) => {
+    console.log(result)
+    ReactDOM.render(<App classificator={result}/>, document.getElementById('main'))
+})
