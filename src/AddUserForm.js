@@ -2,7 +2,6 @@ import React from 'react'
 import { InputField, SelectField, DatePickerField, SelectFieldClassificator } from './FormFields.js'
 import CloseForm from '../static/images/close_form.svg'
 import FileAdded from '../static/images/file_added.svg'
-import { ipcRenderer } from 'electron'
 
 class AddUserForm extends React.Component {
     constructor(props) {
@@ -70,8 +69,8 @@ class AddUserForm extends React.Component {
         return (
             <form id="user_form">
                 <CloseForm id="close_form"/>
-                <div className="first_piece" style={{width:'100%', marginLeft:'10%'}}>
-                    <div style={{backgroundColor:'inherit', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'flex-start', width:'100%'}}>
+                <div className="first_piece" style={{width:'100%'}}>
+                    <div style={{backgroundColor:'inherit', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100%'}}>
                         <InputField type="text" placeholder="№ обращения" />
                         <h2 className="lbl">Корреспондент:</h2>
                         <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center'}}>
@@ -84,22 +83,23 @@ class AddUserForm extends React.Component {
                     </div>
                 </div>
                 <hr className="line"></hr>
-                <div className="second_piece" style={{width: '100%', marginLeft:'10%'}}>
-                    <div style={{backgroundColor:'inherit', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'flex-start', width:'100%'}}>
+                <div className="second_piece" style={{width: '100%'}}>
+                    <div style={{backgroundColor:'inherit', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100%'}}>
                         <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'flex-start', alignItems:'center', width:'100%'}}>
-                            <button style={{margin:'10px 2px 20px 5px'}}className="app_button_grey active_tab" onClick={this.handleClick}>Информация о документе</button>
+                            <button style={{margin:'10px 2px 20px 10%'}}className="app_button_grey active_tab" onClick={this.handleClick}>Информация о документе</button>
                             <button style={{margin:'10px 0px 20px 2px'}}className="app_button_grey" onClick={this.handleClick}>Резолюция</button>
                         </div>
-                        {/* <h1 className="lbl_1">Информация о документе:</h1> */}
                         {this.state.tabToRender === 'doc_info' &&
-                        <div>
-                            <SelectField name="leg_branch" placeholder="Орган власти" options={['Администрация г. Радужный', 'Залупень', 'Прекол', 'Крутотень']} />
-                            <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'flex-start', alignItems:'center'}}>
-                                <SelectField name="doc_type" placeholder="Вид документа" options={['Жалоба', 'Заявление', 'Запрос', 'Предложение']} />
-                                <button style={{marginLeft: '10px'}} className="app_button_blue" onClick={this.handleFileInput}>Прикрепить документ</button>
-                                <input style={{display:'none'}} type="file" id="add_file" accept='.doc, .docx, .pdf'></input>
-                                <FileAdded id="file_added_checkmark" />
-                                <h2 id="file_added_prompt" className="lbl">Файл добавлен</h2>
+                        <div style={{width:'100%', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center'}}>
+                            <div style={{display:'flex', justifyContent:'flex-start', alignItems:'center'}}>
+                                <SelectField name="leg_branch" placeholder="Орган власти" options={['Администрация г. Радужный', 'Залупень', 'Прекол', 'Крутотень']} />
+                                <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center'}}>
+                                    <SelectField name="doc_type" placeholder="Вид документа" options={['Жалоба', 'Заявление', 'Запрос', 'Предложение']} />
+                                    <button style={{marginLeft: '10px'}} className="app_button_blue" onClick={this.handleFileInput}>Прикрепить документ</button>
+                                    <input style={{display:'none'}} type="file" id="add_file" accept='.doc, .docx, .pdf'></input>
+                                    <FileAdded id="file_added_checkmark" />
+                                    <h2 id="file_added_prompt" className="lbl">Файл добавлен</h2>
+                                </div>
                             </div>
                             <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center', marginTop: '35px'}}>
                                 <h2 className="lbl">Содержание обращения:</h2>
@@ -133,6 +133,9 @@ class AddUserForm extends React.Component {
                     </div>
                 </div>
                 <hr className="line"></hr>
+                <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center', margin:'10px 0px', width:'100%'}}>
+                    <button className="app_button_blue" onClick={this.addUser}>Подтвердить</button>
+                </div>
             </form>
         )
     }

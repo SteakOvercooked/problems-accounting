@@ -355,24 +355,32 @@ class SelectFieldClassificator extends React.Component {
     }
 
     optionClick(e) {
+        console.log('clicked')
         this.setState({
             value: e.target.innerHTML,
-            options: this.props.options,
-            id: e.target.parentNode.querySelector('.own_id'),
+            options: this.state.options,
+            id: e.target.parentNode.querySelector('.own_id').innerHTML,
             pID: e.target.parentNode.querySelector('.parent_id').innerHTML,
             desc_full: e.target.parentNode.querySelector('.desc_full').innerHTML,
             code: e.target.parentNode.querySelector('.code').innerHTML,
             approved: true
         })
         const index = this.family.indexOf(e.target.parentNode.parentNode.parentNode.parentNode.querySelector('.select_input').parentNode.id)
+        console.log(`I AM THE INDEX = ${index}`)
         if (index != 4) {
             const next = document.querySelector(`#${this.family[index + 1]}`)
-        if (next.classList.contains('blocked'))
-            next.classList.remove('blocked')
+            if (next.classList.contains('blocked'))
+                next.classList.remove('blocked')
+            for (let i = index + 2; i < 5; i++)
+                if (!document.querySelector(`#${this.family[i]}`).classList.contains('blocked')) {
+                    document.querySelector(`#${this.family[i]}`).classList.add('blocked')
+                    document.querySelector(`#${this.family[i]}`).querySelector('.select_input').value = ''
+                }
         }
     }
 
     handleBlur(e) {
+        console.log('blurred')
         if (!e.target.classList.contains('selected')) {
             const index = this.family.indexOf(e.target.parentNode.id)
             e.target.parentNode.classList.toggle('focused')
@@ -394,6 +402,8 @@ class SelectFieldClassificator extends React.Component {
     }
 
     handleFocus(e) {
+        console.log('focused')
+        this.forceUpdate()
         if (e.target.classList.contains('selected')) {
             e.target.classList.toggle('focused')
             e.target.querySelector('.select_input').focus()
@@ -401,12 +411,32 @@ class SelectFieldClassificator extends React.Component {
     }
 
     render() {
+
+        const index = this.family.indexOf(this.props.iden)
+        const prevIndex = index - 1
+        let opts = null
+        if (prevIndex > -1 && document.querySelector(`#${this.family[prevIndex]} .own_id`) != null) {
+            const groupID = Number(document.querySelector(`#${this.family[prevIndex]} .own_id`).innerHTML)
+            opts = this.props.options
+            .filter(option => option.pID === groupID)
+            if (opts.length === 0)
+                opts.push({
+                    id: '0',
+                    pID: '0',
+                    desc_full: '-',
+                    desc_cut: '-',
+                    code: '0000.0000.0000.0000'
+                })
+        }
+        else {
+            opts = this.props.options
+        }
+
         return (
             <div className="select_wrapper">
                 <div className={this.props.classes} tabIndex="-1" onBlur={this.handleBlur} onFocus={this.handleFocus} id={this.props.iden}>
                     <input type="text" value={this.state.value} onChange={this.handleChange} className="select_input" placeholder={this.props.placeholder}></input>
-                    {/* <span className="own_id" style={{display:'none'}}>{this.state.id}</span> */}
-                    <span className="own_id" style={{display:'none'}}>zhopa</span>
+                    <span className="own_id" style={{display:'none'}}>{this.state.id}</span>
                     <span className="parent_id" style={{display:'none'}}>{this.state.pID}</span>
                     <span className="desc_full" style={{display:'none'}}>{this.state.desc_full}</span>
                     <span className="code" style={{display:'none'}}>{this.state.code}</span>
@@ -414,12 +444,11 @@ class SelectFieldClassificator extends React.Component {
                 </div>
                 <div className="select_options">
                     <ul>
-                        {this.state.options.map((option, ind) => {
+                        {opts.map((option, ind) => {
                             return (
                                 <div key={option.desc_cut + `${ind}`}>
                                     <li onClick={this.optionClick} className="option">{option.desc_cut}</li>
-                                    {/* <span className="own_id" style={{display:'none'}}>{option.id}</span> */}
-                                    <span className="own_id" style={{display:'none'}}>zhopa</span>
+                                    <span className="own_id" style={{display:'none'}}>{option.id}</span>
                                     <span className="parent_id" style={{display:'none'}}>{option.pID}</span>
                                     <span className="desc_full" style={{display:'none'}}>{option.desc_full}</span>
                                     <span className="code" style={{display:'none'}}>{option.code}</span>
