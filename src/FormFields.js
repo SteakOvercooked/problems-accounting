@@ -1,3 +1,4 @@
+import { stat } from 'fs'
 import React from 'react'
 import Arrow from '../static/images/arrow.svg'
 import DatePickerPic from '../static/images/date_picker.svg'
@@ -70,7 +71,6 @@ class SelectField extends React.Component {
 
     handleFocus(e) {
         if (e.target.classList.contains('selected')) {
-            console.log('noo')
             e.target.classList.toggle('focused')
             e.target.querySelector('.select_input').focus()
         }
@@ -262,18 +262,17 @@ class SelectFieldClassificator extends React.Component {
         super(props)
         this.state = {
             value: '',
-            options: this.props.options,
-            id: null,
-            pID: null,
-            desc_full: null,
-            code: null,
-            approved: false
+            options: props.options,
+            currentOptions: props.options,
+            code: '0000.0000.0000.0000',
+            approved: false,
+            blocked: props.blocked
         }
         this.handleChange = this.handleChange.bind(this)
         this.optionClick = this.optionClick.bind(this)
         this.handleBlur = this.handleBlur.bind(this)
         this.handleFocus = this.handleFocus.bind(this)
-        this.blockFamily = this.blockFamily.bind(this)
+        this.narrowOptions = this.narrowOptions.bind(this)
         this.family = ['SECTION', 'SUBJ_MATTER', 'THEME', 'PROBLEM', 'SUB_PROBLEM']
     }
 
@@ -283,16 +282,14 @@ class SelectFieldClassificator extends React.Component {
             if (e.target.value === '') {
                 return {
                     value: e.target.value,
-                    options: props.options,
-                    id: state.id,
-                    pID: state.pID,
-                    desc_full: state.desc_full,
-                    code: state.code,
+                    options: state.options,
+                    currentOptions: state.options,
+                    code: '0000.0000.0000.0000',
                     approved: false
                 }
             }
             else {
-                const opts = props.options
+                const opts = state.options
                 .filter(item => item.desc_full.toLowerCase().includes(e.target.value.toLowerCase()))
                 .sort((a, b) => {
                     if (a.desc_full.indexOf(e.target.value) > b.desc_full.indexOf(e.target.value))
@@ -302,156 +299,83 @@ class SelectFieldClassificator extends React.Component {
                 })
                 return {
                     value: e.target.value,
-                    options: opts,
-                    id: state.id,
-                    pID: state.pID,
-                    desc_full: state.desc_full,
-                    code: state.code,
+                    options: state.options,
+                    currentOptions: opts,
+                    code: '0000.0000.0000.0000',
                     approved: false
                 }
             }
         })
     }
 
-    blockFamily(target) {
-        const index = this.family.indexOf(target.parentNode.id)
-        console.log(target, ' --- ', target.classList[0], ' --- ', index, ' approved -> ', this.state.approved)
-        if (index != 4) {
-            if (this.state.approved) {
-                const next = document.querySelector(`#${this.family[index + 1]}`)
-                if (next.classList.contains('blocked'))
-                    next.classList.remove('blocked')
-            }
-            else {
-                this.setState((state, props) => ({
-                    value: '',
-                    options: props.options,
-                    id: null,
-                    pID: null,
-                    desc_full: null,
-                    code: null,
-                    approved: state.approved
-                }))
-                for (let i = index + 1; i < 5; i++)
-                    if (!document.querySelector(`#${this.family[i]}`).classList.contains('blocked')) {
-                        document.querySelector(`#${this.family[i]}`).classList.add('blocked')
-                        document.querySelector(`#${this.family[i]}`).querySelector('.select_input').value = ''
-                    }
-            }
-        }
-        else {
-            if (!this.state.approved) {
-                this.setState((state, props) => ({
-                    value: '',
-                    options: props.options,
-                    id: null,
-                    pID: null,
-                    desc_full: null,
-                    code: null,
-                    approved: state.approved
-                }))
-            }
-        }
-    }
-
     optionClick(e) {
-        console.log('clicked')
+        const index = this.family.indexOf(this.props.iden)
+        const value = e.target.parentNode.querySelector('.desc_full').innerHTML
+        const ownID =  Number(e.target.parentNode.querySelector('.own_id').innerHTML)
         this.setState({
-            value: e.target.innerHTML,
+            value: value,
             options: this.state.options,
-            id: e.target.parentNode.querySelector('.own_id').innerHTML,
-            pID: e.target.parentNode.querySelector('.parent_id').innerHTML,
-            desc_full: e.target.parentNode.querySelector('.desc_full').innerHTML,
+            currentOptions: this.state.options,
             code: e.target.parentNode.querySelector('.code').innerHTML,
             approved: true
         })
-        const index = this.family.indexOf(e.target.parentNode.parentNode.parentNode.parentNode.querySelector('.select_input').parentNode.id)
-        console.log(`I AM THE INDEX = ${index}`)
-        if (index != 4) {
-            const next = document.querySelector(`#${this.family[index + 1]}`)
-            if (next.classList.contains('blocked'))
-                next.classList.remove('blocked')
-            for (let i = index + 2; i < 5; i++)
-                if (!document.querySelector(`#${this.family[i]}`).classList.contains('blocked')) {
-                    document.querySelector(`#${this.family[i]}`).classList.add('blocked')
-                    document.querySelector(`#${this.family[i]}`).querySelector('.select_input').value = ''
-                }
-        }
+        this.props.onApproved(index, value, ownID)
     }
 
     handleBlur(e) {
-        console.log('blurred')
-        if (!e.target.classList.contains('selected')) {
-            const index = this.family.indexOf(e.target.parentNode.id)
+        if (!e.target.classList.contains('selected'))
             e.target.parentNode.classList.toggle('focused')
-            this.setState((state, props) => ({
-                value: '',
-                options: props.options,
-                id: null,
-                pID: null,
-                desc_full: null,
-                code: null,
-                approved: false
-            }))
-            for (let i = index + 1; i < 5; i++)
-                if (!document.querySelector(`#${this.family[i]}`).classList.contains('blocked')) {
-                    document.querySelector(`#${this.family[i]}`).classList.add('blocked')
-                    document.querySelector(`#${this.family[i]}`).querySelector('.select_input').value = ''
-                }
-        }
     }
 
     handleFocus(e) {
-        console.log('focused')
-        this.forceUpdate()
         if (e.target.classList.contains('selected')) {
             e.target.classList.toggle('focused')
             e.target.querySelector('.select_input').focus()
         }
     }
 
-    render() {
-
-        const index = this.family.indexOf(this.props.iden)
-        const prevIndex = index - 1
-        let opts = null
-        if (prevIndex > -1 && document.querySelector(`#${this.family[prevIndex]} .own_id`) != null) {
-            const groupID = Number(document.querySelector(`#${this.family[prevIndex]} .own_id`).innerHTML)
-            opts = this.props.options
-            .filter(option => option.pID === groupID)
-            if (opts.length === 0)
-                opts.push({
-                    id: '0',
-                    pID: '0',
-                    desc_full: '-',
-                    desc_cut: '-',
-                    code: '0000.0000.0000.0000'
-                })
+    narrowOptions(index, ownindex, pID) {
+        if (ownindex - index > 1) {
+            this.setState({
+                value: '',
+                options: this.props.options,
+                currentOptions: this.props.options,
+                code: '0000.0000.0000.0000',
+                approved: false,
+                blocked: true
+            })
         }
         else {
-            opts = this.props.options
+            const opts = this.props.options
+            .filter(item => item.pID === pID)
+            this.setState({
+                value: '',
+                options: opts,
+                currentOptions: opts,
+                code: '0000.0000.0000.0000',
+                approved: false,
+                blocked: false
+            })
         }
+    }
 
+    render() {
         return (
             <div className="select_wrapper">
-                <div className={this.props.classes} tabIndex="-1" onBlur={this.handleBlur} onFocus={this.handleFocus} id={this.props.iden}>
-                    <input type="text" value={this.state.value} onChange={this.handleChange} className="select_input" placeholder={this.props.placeholder}></input>
-                    <span className="own_id" style={{display:'none'}}>{this.state.id}</span>
-                    <span className="parent_id" style={{display:'none'}}>{this.state.pID}</span>
-                    <span className="desc_full" style={{display:'none'}}>{this.state.desc_full}</span>
-                    <span className="code" style={{display:'none'}}>{this.state.code}</span>
-                    <Arrow className="arrow_select"/>
+                <div className={`selected ${this.state.blocked ? "blocked" : ""}`} tabIndex="-1" onBlur={this.handleBlur} onFocus={this.handleFocus}>
+                     <input type="text" value={this.state.value} onChange={this.handleChange} className="select_input" placeholder={this.props.placeholder}></input>
+                     <Arrow className="arrow_select"/>
                 </div>
                 <div className="select_options">
                     <ul>
-                        {opts.map((option, ind) => {
+                        {this.state.currentOptions.map((option, ind) => {
                             return (
-                                <div key={option.desc_cut + `${ind}`}>
-                                    <li onClick={this.optionClick} className="option">{option.desc_cut}</li>
-                                    <span className="own_id" style={{display:'none'}}>{option.id}</span>
-                                    <span className="parent_id" style={{display:'none'}}>{option.pID}</span>
-                                    <span className="desc_full" style={{display:'none'}}>{option.desc_full}</span>
-                                    <span className="code" style={{display:'none'}}>{option.code}</span>
+                                <div onClick={this.optionClick} key={option.desc_cut[0] + `${ind}`} style={{width: '100%'}}>
+                                    <li className="option">{option.desc_cut}</li>
+                                    <span className="own_id" style={{display: 'none'}}>{option.id}</span>
+                                    <span className="pID" style={{display: 'none'}}>{option.pID}</span>
+                                    <span className="code" style={{display: 'none'}}>{option.code}</span>
+                                    <span className="desc_full" style={{display: 'none'}}>{option.desc_full}</span>
                                 </div>
                             )
                         })} 

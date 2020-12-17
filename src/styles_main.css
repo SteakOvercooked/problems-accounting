@@ -107,6 +107,8 @@ body {
     height: 70%;
     min-height: 300;
     border-radius: 2%;
+    justify-content: center;
+    align-items: center;
 }
 
 .form_field, .form_select {
@@ -152,6 +154,7 @@ body {
     color: #d6d6d6;
     font-family: 'Nunito', sans-serif;
     margin: 5px;
+    white-space: nowrap;
 }
 
 .line {
@@ -196,7 +199,7 @@ body {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    min-width: 200px;
+    min-width: 150px;
 }
 
 .selected.focused {
@@ -428,10 +431,11 @@ body {
     height: 45px;
     opacity: 0;
     margin-left: 15px;
+    opacity: 0;
 }
 
 #file_added_checkmark.success {
-    opacity: 1;
+   opacity: 1;
 }
 
 #file_added_prompt {

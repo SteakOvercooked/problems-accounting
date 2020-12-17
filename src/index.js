@@ -53,21 +53,6 @@ class App extends React.Component {
         
         if (this.state.fileToRender === 'index.html') {
 
-            document.getElementById('close_app')
-            .addEventListener('click', () => {
-                ipcRenderer.send('shut_off', null)
-            })
-
-            document.getElementById('maximize_app')
-            .addEventListener('click', () => {
-                ipcRenderer.send('maximize', null)
-            })
-
-            document.getElementById('minimize_app')
-            .addEventListener('click', () => {
-            ipcRenderer.send('minimize', null)
-            })
-
             document.getElementById('add_item')
             .addEventListener('click', () => {
                 this.setState({
@@ -96,6 +81,5 @@ class App extends React.Component {
 }
 
 ipcRenderer.on('classificator', (e, result) => {
-    console.log(result)
     ReactDOM.render(<App classificator={result}/>, document.getElementById('main'))
 })

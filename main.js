@@ -6,7 +6,7 @@ function createMainWindow() {
     MainWindow = new BrowserWindow({
         width: 1366,
         height: 768,
-        minWidth: 1200,
+        minWidth: 1280,
         minHeight: 500,
         frame: false,
         icon: './static/images/app_icon_64x64.ico',
@@ -19,7 +19,7 @@ function createMainWindow() {
     MainWindow.webContents.toggleDevTools()
 }
 
-function query(ind) {
+function queryClassif(ind) {
     return `SELECT id, parent_id, code, desc FROM CLAS_LVL_${ind}`
 }
 
@@ -37,7 +37,7 @@ app.on('ready', () => {
 
     for(let i = 0; i < 5; i++) {
         const prom = new Promise((resolve, reject) => {
-            db.all(query(i), (err, rows) => {
+            db.all(queryClassif(i), (err, rows) => {
                 rows.forEach(row => {
                     Classificator[i].push({
                         id: row.id,
