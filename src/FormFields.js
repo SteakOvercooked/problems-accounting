@@ -7,13 +7,18 @@ class InputField extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            value: ''
+            value: props.initial
         }
+        this.blurred = this.blurred.bind(this)
+    }
+
+    blurred(e) {
+        this.props.onLeave(this.props.fieldName, this.state.value)
     }
 
     render() {
         return (
-            <input className="form_field" type={this.props.type} placeholder={this.props.placeholder}></input>
+            <input className="form_field" onBlur={this.blurred} type={this.props.type} placeholder={this.props.placeholder}></input>
         )
     }
 }
@@ -22,8 +27,8 @@ class SelectField extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            value: '',
-            options: this.props.options
+            value: props.initial,
+            options: props.options
         }
         this.handleChange = this.handleChange.bind(this)
         this.optionClick = this.optionClick.bind(this)
@@ -61,7 +66,8 @@ class SelectField extends React.Component {
         this.setState({
             value: e.target.innerHTML,
             options: this.props.options
-        })
+        },
+        () => this.props.onChoice(this.props.fieldName, this.state.value))
     }
 
     handleBlur(e) {
@@ -116,25 +122,26 @@ class DatePickerField extends React.Component {
         }
         const today = new Date()
         this.state = {
-            currentMonth: this.parseMonth(today.getMonth()),
-            currentYear: today.getFullYear(),
-            currentMonthIndex: today.getMonth(),
-            datePicked: this.props.datepicked === null
+            currentMonth: props.datepicked === null ? this.parseMonth(today.getMonth()) : this.parseMonth(props.datepicked.month - 1),
+            currentYear: props.datepicked === null ? today.getFullYear() : props.datepicked.year,
+            currentMonthIndex: props.datepicked === null ? today.getMonth() : props.datepicked.month - 1,
+            datePicked: props.datepicked === null
             ? {
                 year: today.getFullYear(),
                 month: today.getMonth(),
                 date: today.getDate()
             }
             : {
-                year: this.props.datepicked.year,
-                month: this.props.datepicked.month,
-                date: this.props.datepicked.date
+                year: props.datepicked.year,
+                month: props.datepicked.month,
+                date: props.datepicked.date
             }
         }
         this.handleBackward = this.handleBackward.bind(this)
         this.handleForward = this.handleForward.bind(this)
         this.handleClick = this.handleClick.bind(this)
         this.handleClickDate = this.handleClickDate.bind(this)
+        this.handleCalendarBlur = this.handleCalendarBlur.bind(this)
     }
 
     parseMonth(month) {
@@ -188,6 +195,7 @@ class DatePickerField extends React.Component {
 
     handleCalendarBlur(e) {
         e.target.classList.toggle('active')
+        this.props.onChoice(this.props.fieldName, this.state.datePicked)
     }
 
     handleClickDate(e) {
@@ -238,7 +246,7 @@ class DatePickerField extends React.Component {
         return (
             <div style={{position:'relative'}}>
                 <div className="chosen_date" onClick={this.handleClick}>
-                    <input className="date_input" value={pickedDateStr} type="text" placeholder="Выберите дату"
+                    <input className="date_input" value={pickedDateStr} readOnly type="text" placeholder="Выберите дату"
                     style={{color:'inherit', backgroundColor:'inherit', fontFamily:'inherit', border:'none', outline:'none', fontSize:'1rem', margin:'0 5px', pointerEvents:'none'}} />
                     <DatePickerPic className="date_picker_pic"/>
                 </div>
@@ -261,12 +269,12 @@ class SelectFieldClassificator extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            value: '',
+            value: props.initial,
             options: props.options,
             currentOptions: props.options,
             code: '0000.0000.0000.0000',
-            approved: false,
-            blocked: props.blocked
+            approved: props.initial === '' ? false : true,
+            blocked: props.initial === '' ? props.blocked : false
         }
         this.handleChange = this.handleChange.bind(this)
         this.optionClick = this.optionClick.bind(this)
@@ -311,6 +319,7 @@ class SelectFieldClassificator extends React.Component {
     optionClick(e) {
         const index = this.family.indexOf(this.props.iden)
         const value = e.target.parentNode.querySelector('.desc_full').innerHTML
+        const code = e.target.parentNode.querySelector('.code').innerHTML
         const ownID =  Number(e.target.parentNode.querySelector('.own_id').innerHTML)
         this.setState({
             value: value,
@@ -319,7 +328,9 @@ class SelectFieldClassificator extends React.Component {
             code: e.target.parentNode.querySelector('.code').innerHTML,
             approved: true
         })
-        this.props.onApproved(index, value, ownID)
+        this.props.onApproved(index, value, code, ownID)
+        if (index === 4)
+            this.props.showChoice(index)
     }
 
     handleBlur(e) {
@@ -348,12 +359,14 @@ class SelectFieldClassificator extends React.Component {
         else {
             const opts = this.props.options
             .filter(item => item.pID === pID)
+            if (opts.length === 0)
+                this.props.showChoice(index)
             this.setState({
-                value: '',
+                value: opts.length === 0 ? '-' : '',
                 options: opts,
                 currentOptions: opts,
                 code: '0000.0000.0000.0000',
-                approved: false,
+                approved: opts.length === 0 ? true : false,
                 blocked: false
             })
         }
@@ -378,7 +391,7 @@ class SelectFieldClassificator extends React.Component {
                                     <span className="desc_full" style={{display: 'none'}}>{option.desc_full}</span>
                                 </div>
                             )
-                        })} 
+                        })}
                     </ul>
                 </div>
             </div>
@@ -386,4 +399,36 @@ class SelectFieldClassificator extends React.Component {
     }
 }
 
-export { InputField, SelectField, DatePickerField, SelectFieldClassificator }
+class TextAreaField extends React.Component {
+    constructor(props) {
+        super(props)
+        this.state = {
+            value: props.initial
+        }
+        this.handleChange = this.handleChange.bind(this)
+        this.handleBlur = this.handleBlur.bind(this)
+    }
+
+    handleBlur(e) {
+        this.props.onLeave(this.props.fieldName, this.state.value)
+    }
+
+    handleChange(e) {
+        this.setState({
+            value: e.target.value
+        })
+    }
+
+    render() {
+        let elem = null
+        if (this.props.rdonly)
+            elem = <textarea readOnly value={this.state.value} onChange={this.handleChange} className="notation_readonly"></textarea>
+        else
+            elem = <textarea value={this.state.value} onChange={this.handleChange} maxLength="256" className="notation" onBlur={this.handleBlur}></textarea>
+        return (
+            elem
+        )
+    }
+}
+
+export { InputField, SelectField, DatePickerField, SelectFieldClassificator, TextAreaField }

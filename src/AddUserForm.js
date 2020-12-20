@@ -1,5 +1,5 @@
 import React from 'react'
-import { InputField, SelectField, DatePickerField, SelectFieldClassificator } from './FormFields.js'
+import { InputField, SelectField, DatePickerField, SelectFieldClassificator, TextAreaField } from './FormFields.js'
 import CloseForm from '../static/images/close_form.svg'
 import FileAdded from '../static/images/file_added.svg'
 
@@ -10,6 +10,7 @@ class AddUserForm extends React.Component {
             tabToRender: 'doc_info',
             activeButton: null,
             file: null,
+            classif_code: '',
             form_data: {
                 prob_num: '',
                 cor_terr: '',
@@ -18,25 +19,29 @@ class AddUserForm extends React.Component {
                 cor_tel: '',
                 cor_soc: '',
                 leg_branch: '',
+                respon: '',
                 doc_type: '',
                 sect: '',
                 subj_matter: '',
                 theme: '',
                 problem: '',
                 sub_problem: '',
+                choice: '',
                 desc: '',
                 author: '',
                 resolut: '',
-                handover_date: '',
-                fullfil_term: '',
-                fullfil_date: ''
+                handover_date: null,
+                fullfil_term: null
             }
         }
         this.handleClick = this.handleClick.bind(this)
         this.Classificator = this.props.classif
         this.classifFields = [React.createRef(), React.createRef(), React.createRef(), React.createRef(), React.createRef()]
+        this.textAreaRef = React.createRef()
         this.handleClassifFieldApproved = this.handleClassifFieldApproved.bind(this)
         this.fileInputChange = this.fileInputChange.bind(this)
+        this.handleChoice = this.handleChoice.bind(this)
+        this.handleFieldLeave = this.handleFieldLeave.bind(this)
     }
 
     componentDidMount() {
@@ -88,12 +93,75 @@ class AddUserForm extends React.Component {
         }))
     }
 
-    handleClassifFieldApproved(index, value, ownID) {
-        if (index != 4) {
-            for (let i = index + 1; i < 5; i++)
-                this.classifFields[i].current.narrowOptions(index, i, ownID)
+    handleClassifFieldApproved(index, value, code, ownID) {
+        const { form_data } = this.state
+        let new_form_data = form_data
+        switch (index) {
+            case 0:
+                new_form_data.sect = value
+                break
+            case 1:
+                new_form_data.subj_matter = value
+                break
+            case 2:
+                new_form_data.theme = value
+                break
+            case 3:
+                new_form_data.problem = value
+                break
+            case 4:
+                new_form_data.sub_problem = value
+                break
         }
-        // вызвать сет стейт формы и записать изменение
+        this.setState({
+            form_data: new_form_data,
+            classif_code: index > 2 ? code : ''
+        },
+        () => {
+            if (index != 4) {
+                for (let i = index + 1; i < 5; i++)
+                    this.classifFields[i].current.narrowOptions(index, i, ownID)
+            }
+        })
+    }
+
+    handleChoice(index) {
+        const { form_data } = this.state
+        let new_form_data = form_data
+        if (index === 3) {
+            let value = this.state.classif_code + ' - ' + this.state.form_data.problem
+            new_form_data.sub_problem = '-'
+            new_form_data.choice = value
+            this.setState({
+                form_data: new_form_data
+            })
+            this.textAreaRef.current.setState({
+                value: value
+            })
+        }
+        else {
+            let value = this.state.classif_code + ' - ' + this.state.form_data.problem + ` [${this.state.form_data.sub_problem}]`
+            new_form_data.choice = value
+            this.setState({
+                form_data: new_form_data
+            })
+            this.textAreaRef.current.setState({
+                value: value
+            })
+        }
+    }
+
+    handleFieldLeave(field, value) {
+        new Promise((resolve, reject) => {
+            const { form_data } = this.state
+            let new_form_data = form_data
+            new_form_data[`${field}`] = value
+            resolve(new_form_data)
+        }).then(res => {
+            this.setState({
+                form_data: res
+            })
+        })
     }
 
     render() {
@@ -102,14 +170,14 @@ class AddUserForm extends React.Component {
                 <CloseForm id="close_form"/>
                 <div className="first_piece" style={{width:'100%'}}>
                     <div style={{backgroundColor:'inherit', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100%'}}>
-                        <InputField type="text" placeholder="№ обращения" />
+                        <InputField type="text" placeholder="№ обращения" initial={this.state.form_data.prob_num} fieldName="prob_num" onLeave={this.handleFieldLeave} />
                         <h2 className="lbl">Корреспондент:</h2>
                         <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center'}}>
-                            <InputField type="text" placeholder="Территория" />
-                            <InputField type="text" placeholder="ФИО" />
-                            <InputField type="text" placeholder="Адрес" />
-                            <InputField type="text" placeholder="Телефон" />
-                            <InputField type="text" placeholder="Соц. положение" />
+                            <InputField type="text" placeholder="Территория" initial={this.state.form_data.cor_terr} fieldName="cor_terr" onLeave={this.handleFieldLeave} />
+                            <InputField type="text" placeholder="ФИО" initial={this.state.form_data.cor_fio} fieldName="cor_fio" onLeave={this.handleFieldLeave} />
+                            <InputField type="text" placeholder="Адрес" initial={this.state.form_data.cor_addr} fieldName="cor_addr" onLeave={this.handleFieldLeave} />
+                            <InputField type="text" placeholder="Телефон" initial={this.state.form_data.cor_tel} fieldName="cor_tel" onLeave={this.handleFieldLeave} />
+                            <InputField type="text" placeholder="Соц. положение" initial={this.state.form_data.cor_soc} fieldName="cor_soc" onLeave={this.handleFieldLeave} />
                         </div>
                     </div>
                 </div>
@@ -123,9 +191,10 @@ class AddUserForm extends React.Component {
                         {this.state.tabToRender === 'doc_info' &&
                         <div style={{width:'100%', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center'}}>
                             <div style={{display:'flex', justifyContent:'flex-start', alignItems:'center'}}>
-                                <SelectField name="leg_branch" placeholder="Орган власти" options={['Администрация г. Радужный']} />
+                                <SelectField fieldName="leg_branch" placeholder="Орган власти" options={['Администрация г. Радужный']} initial={this.state.form_data.leg_branch} onChoice={this.handleFieldLeave} />
+                                <SelectField fieldName="respon" placeholder="Ответственный" options={['Дядя', 'тетя']} initial={this.state.form_data.respon} onChoice={this.handleFieldLeave} />
                                 <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center'}}>
-                                    <SelectField name="doc_type" placeholder="Вид документа" options={['Жалоба', 'Заявление', 'Запрос', 'Предложение']} />
+                                    <SelectField fieldName="doc_type" placeholder="Вид документа" options={['Жалоба', 'Заявление', 'Запрос', 'Предложение']} initial={this.state.form_data.doc_type} onChoice={this.handleFieldLeave} />
                                     <button style={{marginLeft: '10px'}} className="app_button_blue" onClick={this.handleFileInput}>Прикрепить документ</button>
                                     <input style={{display:'none'}} type="file" id="add_file" accept='.doc, .docx, .pdf' onChange={this.fileInputChange}></input>
                                     <FileAdded id="file_added_checkmark" className={this.state.file !== null ? "success" : ""} />
@@ -134,33 +203,36 @@ class AddUserForm extends React.Component {
                             </div>
                             <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center', marginTop: '35px', width: '90%'}}>
                                 <h2 className="lbl">Содержание обращения:</h2>
-                                <SelectFieldClassificator ref={this.classifFields[0]} onApproved={this.handleClassifFieldApproved} placeholder="Раздел" options={this.Classificator[0]} iden="SECTION" blocked={false} />
-                                <SelectFieldClassificator ref={this.classifFields[1]} onApproved={this.handleClassifFieldApproved} placeholder="Тематика" options={this.Classificator[1]} iden="SUBJ_MATTER" blocked={true} />
-                                <SelectFieldClassificator ref={this.classifFields[2]} onApproved={this.handleClassifFieldApproved} placeholder="Тема" options={this.Classificator[2]} iden="THEME" blocked={true} />
-                                <SelectFieldClassificator ref={this.classifFields[3]} onApproved={this.handleClassifFieldApproved} placeholder="Вопрос" options={this.Classificator[3]} iden="PROBLEM" blocked={true} />
-                                <SelectFieldClassificator ref={this.classifFields[4]} onApproved={this.handleClassifFieldApproved} placeholder="Уточнение" options={this.Classificator[4]} iden="SUB_PROBLEM" blocked={true} />
+                                <SelectFieldClassificator ref={this.classifFields[0]} onApproved={this.handleClassifFieldApproved} placeholder="Раздел" options={this.Classificator[0]} iden="SECTION" blocked={false} initial={this.state.form_data.sect} />
+                                <SelectFieldClassificator ref={this.classifFields[1]} onApproved={this.handleClassifFieldApproved} placeholder="Тематика" options={this.Classificator[1]} iden="SUBJ_MATTER" blocked={true} initial={this.state.form_data.subj_matter} />
+                                <SelectFieldClassificator ref={this.classifFields[2]} onApproved={this.handleClassifFieldApproved} placeholder="Тема" options={this.Classificator[2]} iden="THEME" blocked={true} initial={this.state.form_data.theme} />
+                                <SelectFieldClassificator ref={this.classifFields[3]} onApproved={this.handleClassifFieldApproved} placeholder="Вопрос" options={this.Classificator[3]} iden="PROBLEM" blocked={true} initial={this.state.form_data.problem} />
+                                <SelectFieldClassificator ref={this.classifFields[4]} onApproved={this.handleClassifFieldApproved} showChoice={this.handleChoice} placeholder="Уточнение" options={this.Classificator[4]} iden="SUB_PROBLEM" blocked={true} initial={this.state.form_data.sub_problem} />
+                            </div>
+                            <TextAreaField rdonly={true} ref={this.textAreaRef} initial={this.state.form_data.choice} />
+                            <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center', marginTop: '20px', width: '90%'}}>
+                                <h2 className="lbl">Аннотация:</h2>
+                                <TextAreaField rdonly={false} initial={this.state.form_data.desc} fieldName="desc" onLeave={this.handleFieldLeave} />
                             </div>
                         </div>
                         }
                         {this.state.tabToRender === 'resol' &&
                         <div>
                             <div style={{display: 'flex', width: '100%', justifyContent: 'center', alignItems: 'center'}}>
-                                <SelectField name="author" placeholder="Автор" options={['Дада я', 'Kemical', 'Empty lol']} />
-                                <SelectField name="resolut" placeholder="Резолюция" options={['Направлено на рассмотрение с ответом', 'Dada', 'kil']} />
+                                <SelectField fieldName="author" placeholder="Автор" options={['Дада я', 'Kemical', 'Empty lol']} initial={this.state.form_data.author} onChoice={this.handleFieldLeave} />
+                                <SelectField fieldName="resolut" placeholder="Резолюция" options={['Направлено на рассмотрение с ответом', 'Направлено на рассмотрение с ответом (контроль)', 'Проверка']} initial={this.state.form_data.resolut} onChoice={this.handleFieldLeave} />
                             </div>
                             <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'flex-start', alignItems:'center', margin:'10px 0px'}}>
                                 <h2 className="lbl" style={{marginRight:'10px'}}>Дата передачи на исполнение:</h2>
-                                <DatePickerField datepicked={null} />
+                                <DatePickerField datepicked={this.state.form_data.handover_date} fieldName="handover_date" onChoice={this.handleFieldLeave} />
+                                <h2 className="lbl" style={{marginRight:'10px', marginLeft: '20px'}}>Срок исполнения:</h2>
+                                <DatePickerField datepicked={this.state.form_data.fullfil_term} fieldName="fullfil_term" onChoice={this.handleFieldLeave} />
                             </div>
-                            <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'flex-start', alignItems:'center', margin:'10px 0px'}}>
-                                <h2 className="lbl" style={{marginRight:'10px'}}>Срок исполнения:</h2>
-                                <DatePickerField datepicked={null} />
-                            </div>
-                            <InputField type="text" placeholder="Результат" />
+                            {/* <InputField type="text" placeholder="Результат" />
                             <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'flex-start', alignItems:'center', margin:'10px 0px'}}>
                                 <h2 className="lbl" style={{marginRight:'10px'}}>Исполнен:</h2>
                                 <DatePickerField datepicked={null} />
-                            </div>
+                            </div> */}
                         </div>
                         }
                     </div>

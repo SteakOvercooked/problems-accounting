@@ -483,3 +483,51 @@ body {
     background-color: #23272a;
     pointer-events: none;
 }
+
+.notation, .notation_readonly {
+    resize: none;
+    background-color: #2f3136;
+    color: #d6d6d6;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: #2f3136;
+    padding: 5px;
+    outline: 0;
+    transition: border-color 0.1s ease-in-out;
+    font-family: 'Nunito', sans-serif;
+    border-style: solid;
+    font-size: 1rem;
+}
+
+.notation_readonly {
+    width: 90%;
+    max-width: 1200px;
+    height: 40px;
+    cursor: default;
+    transition: height 0.2s ease-in-out;
+}
+
+.notation {
+    margin-left: 10px;
+    width: 25%;
+    height: 80px;
+}
+
+.notation:focus {
+    border-color: #7289da;
+}
+
+.notation_readonly.wrapped {
+    height: 0;
+}
+
+.notation::-webkit-scrollbar, .notation_readonly::-webkit-scrollbar {
+    background: #2a2b30;
+    width: 5px;
+    border-radius: 4px;
+}
+
+.notation::-webkit-scrollbar-thumb, .notation_readonly::-webkit-scrollbar-thumb {
+    background: #191a1d;
+    border-radius: 4px;
+}
