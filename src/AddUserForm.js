@@ -2,6 +2,7 @@ import React from 'react'
 import { InputField, SelectField, DatePickerField, SelectFieldClassificator, TextAreaField } from './FormFields.js'
 import CloseForm from '../static/images/close_form.svg'
 import FileAdded from '../static/images/file_added.svg'
+import { ipcRenderer } from 'electron'
 
 class AddUserForm extends React.Component {
     constructor(props) {
@@ -42,6 +43,7 @@ class AddUserForm extends React.Component {
         this.fileInputChange = this.fileInputChange.bind(this)
         this.handleChoice = this.handleChoice.bind(this)
         this.handleFieldLeave = this.handleFieldLeave.bind(this)
+        this.addProblem = this.addProblem.bind(this)
     }
 
     componentDidMount() {
@@ -89,7 +91,7 @@ class AddUserForm extends React.Component {
         this.setState(state => ({
             tabToRender: state.tabToRender,
             activeButton: state.activeButton,
-            file: e.target.files[0]
+            file: e.target.files[0].path
         }))
     }
 
@@ -164,6 +166,15 @@ class AddUserForm extends React.Component {
         })
     }
 
+    addProblem(e) {
+        e.preventDefault()
+        const { form_data, file } = this.state
+        ipcRenderer.send('add_problem', {form_data: form_data, file: file})
+        ipcRenderer.on('problem_added', (e, args) => {
+            console.log('SUCCESS!')
+        })
+    }
+
     render() {
         return (
             <form id="user_form">
@@ -179,6 +190,7 @@ class AddUserForm extends React.Component {
                             <InputField type="text" placeholder="Телефон" initial={this.state.form_data.cor_tel} fieldName="cor_tel" onLeave={this.handleFieldLeave} />
                             <InputField type="text" placeholder="Соц. положение" initial={this.state.form_data.cor_soc} fieldName="cor_soc" onLeave={this.handleFieldLeave} />
                         </div>
+                        <button className="app_button_blue" style={{margin: '10px 0'}} onClick={null}>Выбрать из существующих</button>
                     </div>
                 </div>
                 <hr className="line"></hr>
@@ -239,7 +251,7 @@ class AddUserForm extends React.Component {
                 </div>
                 <hr className="line"></hr>
                 <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center', margin:'10px 0px', width:'100%'}}>
-                    <button className="app_button_blue" onClick={this.addUser}>Подтвердить</button>
+                    <button className="app_button_blue" onClick={this.addProblem}>Подтвердить</button>
                 </div>
             </form>
         )

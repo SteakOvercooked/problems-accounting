@@ -1,4 +1,3 @@
-import { stat } from 'fs'
 import React from 'react'
 import Arrow from '../static/images/arrow.svg'
 import DatePickerPic from '../static/images/date_picker.svg'
@@ -10,15 +9,22 @@ class InputField extends React.Component {
             value: props.initial
         }
         this.blurred = this.blurred.bind(this)
+        this.handleChange = this.handleChange.bind(this)
     }
 
     blurred(e) {
         this.props.onLeave(this.props.fieldName, this.state.value)
     }
 
+    handleChange(e) {
+        this.setState({
+            value: e.target.value
+        })
+    }
+
     render() {
         return (
-            <input className="form_field" onBlur={this.blurred} type={this.props.type} placeholder={this.props.placeholder}></input>
+            <input onChange={this.handleChange} className="form_field" onBlur={this.blurred} type={this.props.type} placeholder={this.props.placeholder}></input>
         )
     }
 }
