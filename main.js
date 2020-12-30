@@ -25,6 +25,31 @@ function queryClassif(ind) {
     return `SELECT id, parent_id, code, desc FROM CLAS_LVL_${ind}`
 }
 
+function getBorders() {
+    let today = new Date()
+    today.setDate(1)
+    today.setDate(today.getDate() - 1)
+    const LB = today //left border
+    today = new Date()
+    const mt = today.getMonth()
+    today.setDate(today.getDate() + 20)
+    if (mt === today.getMonth())
+        today.setDate(today.getDate() + 20)
+    today.setDate(1)
+    const RB = today //right border
+    return [LB, RB]
+}
+
+function queryProblems(LB, RB) {
+    return `SELECT Problems.number, handover_date, Problems.respon, People.fio, Problems.desc
+            FROM (People INNER JOIN
+            (Problems INNER JOIN
+            (SELECT handover_date, problem_id FROM Resolutions
+                WHERE datetime(handover_date) BETWEEN '${LB.getFullYear()}-${LB.getMonth() + 1}-${LB.getDate()}' AND '${RB.getFullYear()}-${RB.getMonth() + 1}-${RB.getDate()}')
+            ON Problems.id = problem_id)
+            ON People.id = Problems.person_id)`
+}
+
 app.on('ready', () => {
     let db = new SQLite.Database('./Классификатор/Классификатор.db')
 
@@ -54,10 +79,32 @@ app.on('ready', () => {
         })
         promises.push(prom)
     }
+
+    MainDB = new SQLite.Database('./static/database/MainDB.db')
+    let Problems = []
+    const borders = getBorders()
+    const retrieveProbsProm = new Promise((resolve, reject) => {
+        MainDB.all(queryProblems(...borders), (err, rows) => {
+            if (err)
+                console.log(err.message)
+            rows.forEach(row => {
+                Problems.push({
+                    handover_date: row.handover_date,
+                    number: row.number,
+                    respon: row.respon,
+                    fio: row.fio,
+                    desc: row.desc.length > 70 ? row.desc.substring(0, 66) + '...' : row.desc
+                })
+            })
+        })
+        resolve('yay')
+    })
+    promises.push(retrieveProbsProm)
+
     Promise.all(promises)
     .then(createMainWindow())
     .then(MainWindow.webContents.on('did-finish-load', () => {
-        MainWindow.webContents.send('classificator', Classificator)
+        MainWindow.webContents.send('start_up_data', {classif: Classificator, problems: Problems})
     }))
 })
 
@@ -75,7 +122,6 @@ ipcMain.on('maximize', (e, args) => {
 
 ipcMain.on('add_problem', (e, args) => {
     const { form_data, file } = args
-    MainDB = new SQLite.Database('./static/database/MainDB.db')
 
     MainDB.run('INSERT INTO People VALUES (?1,?2,?3,?4,?5,?6)', {
         1: null,

@@ -9,7 +9,7 @@ body {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    background-color: #23272a;
+    background-color: #24272d;
     -webkit-app-region: drag;
 }
 
@@ -51,7 +51,8 @@ body {
 
 .navbar {
     display: flex;
-    background-color: #23272a;
+    /* background-color: #23272a; */
+    background-color: #24272d;
     height: 100vh;
     width: 120px;
     flex-direction: column;
@@ -61,18 +62,8 @@ body {
 
 #nav_cont_wrapper {
     display: flex;
-    background-color: #23272a;
-}
-
-#content {
-    background-color: #2f3136;
-    border-top-left-radius: 1%;
-    height: 100vh;
-    width: 100%;
-    display:flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    /* background-color: #23272a; */
+    background-color: #24272d;
 }
 
 .btn_nav {
@@ -101,14 +92,11 @@ body {
 
 #people_container {
     background-color: #36393f;
-    width: 90%;
-    min-width: 860px;
-    height: 70%;
-    min-height: 300px;
+    width: 100%;
+    height: 100%;
     overflow-y: auto;
     border-radius: 3px;
     padding: 4px;
-    margin-bottom: 50px;
 }
 
 #people_container::-webkit-scrollbar {
@@ -553,7 +541,7 @@ body {
     height: 50px;
 }
 
-.card_data, .table_header_item {
+.card_data {
     font-size: 0.9rem;
     color: #d6d6d6;
     font-family: 'Nunito', sans-serif;
@@ -565,7 +553,7 @@ body {
 
 .problem_info {
     display: grid;
-    grid-template-columns: repeat(4, 1fr) 3fr;
+    grid-template-columns: 2fr 2fr 4fr 3fr 5fr;
     justify-items: center;
     align-items: center;
     width: 100%;
@@ -657,16 +645,46 @@ body {
     min-width: 860px;
     background-color: inherit;
     display: grid;
-    grid-template-columns: repeat(4, 1fr) 3fr;
+    grid-template-columns: 2fr 2fr 4fr 3fr 5fr;
     justify-items: center;
     align-items: center;
-    margin-bottom: 5px;
+    margin: 0 2px 5px 2px;
 }
 
 #people_cont__main_wrapper {
+    background-color: #36393f;
+    border-top-left-radius: 1%;
+    height: 100vh;
     width: 100%;
-    display: flex;
+    display:flex;
     flex-direction: column;
-    justify-items: flex-end;
     align-items: center;
+    justify-content: flex-end;
+}
+
+.table_header_item {
+    font-size: 0.9rem;
+    color: #919191;
+    font-family: 'Nunito', sans-serif;
+    margin: 5px;
+    white-space: nowrap;
+    pointer-events: none;
+    cursor: pointer;
+}
+
+.line_people_container {
+    width: 90%;
+    border-color: #7289da;
+    border-radius: 20px;
+    border-style: solid;
+    size: 3px;
+    margin: 25px 0;
+}
+
+#filters {
+    display: flex;
+    width: 90%;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: inherit;
 }

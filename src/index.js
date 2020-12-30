@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import { ControlBar } from './ControlBar.js'
 import { ipcRenderer } from 'electron'
 import { Navbar } from './Navbar.js'
-import { Content } from './Content.js'
+import { PeopleContainer } from './PeopleContainer.js'
 import { AddUserForm } from './AddUserForm.js'
 
 class App extends React.Component {
@@ -12,7 +12,6 @@ class App extends React.Component {
         this.state = {
             fileToRender: 'index.html'
         }
-        this.Classificator = this.props.classificator
         this.handleProblemAdded = this.handleProblemAdded.bind(this)
     }
 
@@ -76,17 +75,17 @@ class App extends React.Component {
                 {this.state.fileToRender === 'index.html' &&
                 <div id="nav_cont_wrapper">
                     <Navbar />
-                    <Content />
+                    <PeopleContainer problems={this.props.problems} />
                 </div>
                 }
                 {this.state.fileToRender === 'addUserForm.html' &&
-                <AddUserForm classif={this.Classificator} onProblemAdded={this.handleProblemAdded} />
+                <AddUserForm classif={this.props.classificator} onProblemAdded={this.handleProblemAdded} />
                 }
             </div>
         )
     }
 }
 
-ipcRenderer.on('classificator', (e, result) => {
-    ReactDOM.render(<App classificator={result}/>, document.getElementById('main'))
+ipcRenderer.on('start_up_data', (e, result) => {
+    ReactDOM.render(<App classificator={result.classif} problems={result.problems} />, document.getElementById('main'))
 })
