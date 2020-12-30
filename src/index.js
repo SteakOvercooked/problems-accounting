@@ -13,6 +13,7 @@ class App extends React.Component {
             fileToRender: 'index.html'
         }
         this.Classificator = this.props.classificator
+        this.handleProblemAdded = this.handleProblemAdded.bind(this)
     }
 
     componentDidMount() {
@@ -62,6 +63,12 @@ class App extends React.Component {
         }
     }
 
+    handleProblemAdded() {
+        this.setState({
+            fileToRender: 'index.html'
+        })
+    }
+
     render() {
         return (
             <div id="main_content">
@@ -73,7 +80,7 @@ class App extends React.Component {
                 </div>
                 }
                 {this.state.fileToRender === 'addUserForm.html' &&
-                <AddUserForm classif={this.Classificator}/>
+                <AddUserForm classif={this.Classificator} onProblemAdded={this.handleProblemAdded} />
                 }
             </div>
         )

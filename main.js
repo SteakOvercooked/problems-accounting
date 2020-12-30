@@ -86,30 +86,29 @@ ipcMain.on('add_problem', (e, args) => {
         6: form_data.cor_soc
     }, function (err) {
         if (err === null) {
-            const file_ext = file.split('.').pop()
             const person_id = this.lastID
-            FS.readFile(file, (err, data) => {
+            if (file === null) {
                 MainDB.run('INSERT INTO Problems VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)', {
                     1: null,
                     2: form_data.prob_num,
                     3: form_data.leg_branch,
                     4: form_data.respon,
                     5: form_data.doc_type,
-                    6: data,
-                    7: file_ext,
+                    6: null,
+                    7: null,
                     8: form_data.sect,
                     9: form_data.subj_matter,
                     10: form_data.theme,
                     11: form_data.problem,
                     12: form_data.sub_problem,
                     13: form_data.choice,
-                    14: form_data.desc,
+                    14: form_data.desc === '' ? null : form_data.desc,
                     15: person_id
                 }, function (err) {
                     const problem_id = this.lastID
                     if (err === null) {
                         MainDB.run('INSERT INTO Resolutions VALUES(?1,?2,?3,?4,?5,?6,?7,?8)', {
-                            1:null,
+                            1: null,
                             2: form_data.author,
                             3: form_data.resolut,
                             4: form_data.handover_date,
@@ -124,7 +123,47 @@ ipcMain.on('add_problem', (e, args) => {
                         })
                     }
                 })
-            })
+            }
+            else {
+                const file_ext = file.split('.').pop()
+                FS.readFile(file, (err, data) => {
+                    MainDB.run('INSERT INTO Problems VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)', {
+                        1: null,
+                        2: form_data.prob_num,
+                        3: form_data.leg_branch,
+                        4: form_data.respon,
+                        5: form_data.doc_type,
+                        6: data,
+                        7: file_ext,
+                        8: form_data.sect,
+                        9: form_data.subj_matter,
+                        10: form_data.theme,
+                        11: form_data.problem,
+                        12: form_data.sub_problem,
+                        13: form_data.choice,
+                        14: form_data.desc,
+                        15: person_id
+                    }, function (err) {
+                        const problem_id = this.lastID
+                        if (err === null) {
+                            MainDB.run('INSERT INTO Resolutions VALUES(?1,?2,?3,?4,?5,?6,?7,?8)', {
+                                1:null,
+                                2: form_data.author,
+                                3: form_data.resolut,
+                                4: form_data.handover_date,
+                                5: form_data.fullfil_term,
+                                6: null,
+                                7: null,
+                                8: problem_id
+                            }, function (err) {
+                                if (err === null) {
+                                    e.reply('problem_added', null)
+                                }      
+                            })
+                        }
+                    })
+                })
+            }
         }
     })
 })

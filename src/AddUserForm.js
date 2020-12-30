@@ -3,6 +3,7 @@ import { InputField, SelectField, DatePickerField, SelectFieldClassificator, Tex
 import CloseForm from '../static/images/close_form.svg'
 import FileAdded from '../static/images/file_added.svg'
 import { ipcRenderer } from 'electron'
+import LoadingAnim from '../static/anim/loading.svg'
 
 class AddUserForm extends React.Component {
     constructor(props) {
@@ -12,13 +13,14 @@ class AddUserForm extends React.Component {
             activeButton: null,
             file: null,
             classif_code: '',
+            loading: false,
             form_data: {
                 prob_num: '',
                 cor_terr: '',
                 cor_fio: '',
-                cor_addr: '',
-                cor_tel: '',
-                cor_soc: '',
+                cor_addr: null,
+                cor_tel: null,
+                cor_soc: null,
                 leg_branch: '',
                 respon: '',
                 doc_type: '',
@@ -124,6 +126,9 @@ class AddUserForm extends React.Component {
                 for (let i = index + 1; i < 5; i++)
                     this.classifFields[i].current.narrowOptions(index, i, ownID)
             }
+            else {
+                this.handleChoice(index)
+            }
         })
     }
 
@@ -142,6 +147,7 @@ class AddUserForm extends React.Component {
             })
         }
         else {
+            console.log('index is 4, setting a new value')
             let value = this.state.classif_code + ' - ' + this.state.form_data.problem + ` [${this.state.form_data.sub_problem}]`
             new_form_data.choice = value
             this.setState({
@@ -168,10 +174,17 @@ class AddUserForm extends React.Component {
 
     addProblem(e) {
         e.preventDefault()
+        this.setState({
+            loading: true
+        })
         const { form_data, file } = this.state
         ipcRenderer.send('add_problem', {form_data: form_data, file: file})
         ipcRenderer.on('problem_added', (e, args) => {
-            console.log('SUCCESS!')
+            this.setState({
+                loading: false
+            }, () => {
+                this.props.onProblemAdded()
+            })
         })
     }
 
@@ -190,15 +203,15 @@ class AddUserForm extends React.Component {
                             <InputField type="text" placeholder="Телефон" initial={this.state.form_data.cor_tel} fieldName="cor_tel" onLeave={this.handleFieldLeave} />
                             <InputField type="text" placeholder="Соц. положение" initial={this.state.form_data.cor_soc} fieldName="cor_soc" onLeave={this.handleFieldLeave} />
                         </div>
-                        <button className="app_button_blue" style={{margin: '10px 0'}} onClick={null}>Выбрать из существующих</button>
+                        <button className="app_button_blue" style={{margin: '10px 0', padding: '10px', borderWidth: '0px'}} onClick={null}>Выбрать из существующих</button>
                     </div>
                 </div>
                 <hr className="line"></hr>
                 <div className="second_piece" style={{width: '100%'}}>
                     <div style={{backgroundColor:'inherit', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100%'}}>
                         <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'flex-start', alignItems:'center', width:'100%'}}>
-                            <button style={{margin:'10px 2px 20px 5%'}}className="app_button_grey active_tab" onClick={this.handleClick}>Информация о документе</button>
-                            <button style={{margin:'10px 0px 20px 2px'}}className="app_button_grey" onClick={this.handleClick}>Резолюция</button>
+                            <button style={{margin:'10px 2px 20px 5%', padding: '7px'}} className="app_button_grey active_tab" onClick={this.handleClick}>Информация о документе</button>
+                            <button style={{margin:'10px 0px 20px 2px', padding: '7px'}} className="app_button_grey" onClick={this.handleClick}>Резолюция</button>
                         </div>
                         {this.state.tabToRender === 'doc_info' &&
                         <div style={{width:'100%', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center'}}>
@@ -207,7 +220,7 @@ class AddUserForm extends React.Component {
                                 <SelectField fieldName="respon" placeholder="Ответственный" options={['Дядя', 'тетя']} initial={this.state.form_data.respon} onChoice={this.handleFieldLeave} />
                                 <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center'}}>
                                     <SelectField fieldName="doc_type" placeholder="Вид документа" options={['Жалоба', 'Заявление', 'Запрос', 'Предложение']} initial={this.state.form_data.doc_type} onChoice={this.handleFieldLeave} />
-                                    <button style={{marginLeft: '10px'}} className="app_button_blue" onClick={this.handleFileInput}>Прикрепить документ</button>
+                                    <button style={{marginLeft: '10px', padding: '10px', borderWidth: '0px'}} className="app_button_blue" onClick={this.handleFileInput}>Прикрепить документ</button>
                                     <input style={{display:'none'}} type="file" id="add_file" accept='.doc, .docx, .pdf' onChange={this.fileInputChange}></input>
                                     <FileAdded id="file_added_checkmark" className={this.state.file !== null ? "success" : ""} />
                                     <h2 id="file_added_prompt" className={`lbl ${this.state.file !== null ? "success" : ""}`}>Файл добавлен</h2>
@@ -251,7 +264,8 @@ class AddUserForm extends React.Component {
                 </div>
                 <hr className="line"></hr>
                 <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center', margin:'10px 0px', width:'100%'}}>
-                    <button className="app_button_blue" onClick={this.addProblem}>Подтвердить</button>
+                    {!this.state.loading && <button className="app_button_blue" onClick={this.addProblem} style={{marginRight: '10px', padding: '10px', borderWidth: '0px'}}>Подтвердить</button>}
+                    {this.state.loading && <LoadingAnim className="loading_anim__add_prob"/>}
                 </div>
             </form>
         )

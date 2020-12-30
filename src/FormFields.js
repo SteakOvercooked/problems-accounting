@@ -201,7 +201,10 @@ class DatePickerField extends React.Component {
 
     handleCalendarBlur(e) {
         e.target.classList.toggle('active')
-        this.props.onChoice(this.props.fieldName, this.state.datePicked)
+        const date = this.state.datePicked.date < 10 ? `0${this.state.datePicked.date}` : this.state.datePicked.date
+        const month = this.state.datePicked.month + 1 < 10 ? `0${this.state.datePicked.month + 1}` : this.state.datePicked.month + 1
+        const pickedDateStr = `${this.state.datePicked.year}-${month}-${date}`
+        this.props.onChoice(this.props.fieldName, pickedDateStr)
     }
 
     handleClickDate(e) {
@@ -242,7 +245,9 @@ class DatePickerField extends React.Component {
             'Декабрь': 31
         }
         let dates = [];
-        const pickedDateStr = `${this.state.datePicked.date}-${this.state.datePicked.month + 1}-${this.state.datePicked.year}`
+        const date = this.state.datePicked.date < 10 ? `0${this.state.datePicked.date}` : this.state.datePicked.date
+        const month = this.state.datePicked.month + 1 < 10 ? `0${this.state.datePicked.month + 1}` : this.state.datePicked.month + 1
+        const pickedDateStr = `${date}-${month}-${this.state.datePicked.year}`
         for (let i = 0; i < daysInMonths[this.state.currentMonth]; i++)
             if (pickedDateStr === `${i + 1}-${this.state.currentMonthIndex + 1}-${this.state.currentYear}`)
                 dates.push(<div key={'month'+i.toString()} className="cell_date active" onClick={this.handleClickDate}>{i + 1}</div>)
@@ -335,8 +340,6 @@ class SelectFieldClassificator extends React.Component {
             approved: true
         })
         this.props.onApproved(index, value, code, ownID)
-        if (index === 4)
-            this.props.showChoice(index)
     }
 
     handleBlur(e) {

@@ -100,15 +100,26 @@ body {
 }
 
 #people_container {
-    display: flex;
     background-color: #36393f;
     width: 90%;
-    min-width: 860;
+    min-width: 860px;
     height: 70%;
-    min-height: 300;
-    border-radius: 2%;
-    justify-content: center;
-    align-items: center;
+    min-height: 300px;
+    overflow-y: auto;
+    border-radius: 3px;
+    padding: 4px;
+    margin-bottom: 50px;
+}
+
+#people_container::-webkit-scrollbar {
+    background: #2a2b30;
+    width: 5px;
+    border-radius: 4px;
+}
+
+#people_container::-webkit-scrollbar-thumb {
+    background: #191a1d;
+    border-radius: 4px;
 }
 
 .form_field, .form_select {
@@ -309,9 +320,9 @@ body {
     flex-direction: column;
     position: absolute;
     opacity: 0;
-    top: -200px;
-    left: 130%;
-    transform: translateX(0%);
+    top: -210px;
+    left: 50%;
+    transform: translateX(-30%);
     border:none;
     outline:none;
     transition: all 0.2s ease-in-out;
@@ -320,7 +331,7 @@ body {
 
 .calendar.active {
     pointer-events: all;
-    transform: translateX(-20%);
+    transform: translateX(-50%);
     opacity: 1;
 }
 
@@ -395,14 +406,16 @@ body {
     border-radius: 5px;
     background-color: #7289da;
     cursor: pointer;
-    padding: 10px;
-    border-style: none;
+    border-style: solid;
+    border-width: 3px;
+    border-color: #7289da;
     outline: none;
-    transition: background-color 0.15s ease-in-out;
+    transition: all 0.15s ease-in-out;
 }
 
 .app_button_blue:hover {
     background-color: #5771ce;
+    border-color: #5771ce;
 }
 
 .app_button_grey {
@@ -412,18 +425,21 @@ body {
     border-radius: 5px;
     background-color: #2f3136;
     cursor: pointer;
-    padding: 10px;
-    border-style: none;
+    border-style: solid;
+    border-width: 3px;
+    border-color: #2f3136;
     outline: none;
-    transition: background-color 0.15s ease-in-out;
+    transition: all 0.15s ease-in-out;
 }
 
 .app_button_grey:hover {
     background-color: #23272a;
+    border-color: #23272a;
 }
 
 .app_button_grey.active_tab {
     background-color: #23272a;
+    border-color: #23272a
 }
 
 #file_added_checkmark {
@@ -530,4 +546,127 @@ body {
 .notation::-webkit-scrollbar-thumb, .notation_readonly::-webkit-scrollbar-thumb {
     background: #191a1d;
     border-radius: 4px;
+}
+
+.loading_anim__add_prob {
+    width: 50px;
+    height: 50px;
+}
+
+.card_data, .table_header_item {
+    font-size: 0.9rem;
+    color: #d6d6d6;
+    font-family: 'Nunito', sans-serif;
+    margin: 5px;
+    white-space: nowrap;
+    pointer-events: none;
+    cursor: pointer;
+}
+
+.problem_info {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) 3fr;
+    justify-items: center;
+    align-items: center;
+    width: 100%;
+    height: 50px;
+    background-color: inherit;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.problem_controls {
+    width: 100%;
+    background-color: #2f3136;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    opacity: 0;
+    height: 0;
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.card_wrapper {
+    width: -webkit-fill-available;
+    outline: 0;
+    border-top: 1px solid #494c56;
+    border-left: hidden;
+    border-right: hidden;
+    border-bottom: hidden;
+    background-color: #36393f;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0px 2px;
+}
+
+.card_wrapper.active {
+    background-color: #2f3136;
+    border-color: #2f3136;
+    border-radius: 5px;
+}
+
+.card_wrapper.active + .card_wrapper {
+    border: none;
+}
+
+.card_wrapper.active .problem_controls {
+    opacity: 1;
+    height: 50px;
+}
+
+.card_wrapper.hover {
+    border: 1px solid #494c56;
+    border-radius: 5px;
+    background-color: #494c56;
+}
+
+.card_wrapper.hover .problem_info {
+    background-color: #494c56;
+}
+
+.card_wrapper.hover + .card_wrapper {
+    border: none;
+}
+
+.app_button_red {
+    font-family: 'Nunito', sans-serif;
+    color:  #f04747;
+    font-size: 1rem;
+    background-color: #2f3136;
+    cursor: pointer;
+    border-radius: 5px;
+    border-style: solid;
+    border-width: 3px;
+    border-color: #2f3136;
+    outline: none;
+    transition: all 0.15s ease-in-out;
+}
+
+.app_button_red:hover {
+    color:  #d6d6d6;
+    background-color: #f04747;
+    border-color: #f04747;
+}
+
+#table_headers {
+    width: 90%;
+    min-width: 860px;
+    background-color: inherit;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) 3fr;
+    justify-items: center;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+#people_cont__main_wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-items: flex-end;
+    align-items: center;
 }
