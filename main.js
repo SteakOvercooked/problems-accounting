@@ -25,18 +25,23 @@ function queryClassif(ind) {
     return `SELECT id, parent_id, code, desc FROM CLAS_LVL_${ind}`
 }
 
-function getBorders() {
-    let today = new Date()
+function getBorders(year, month) {
+    let today = new Date(year, month, 1)
+    const LB_prep = today //left border
+    today.setDate(today.getDate() + 40)
     today.setDate(1)
     today.setDate(today.getDate() - 1)
-    const LB = today //left border
-    today = new Date()
-    const mt = today.getMonth()
-    today.setDate(today.getDate() + 20)
-    if (mt === today.getMonth())
-        today.setDate(today.getDate() + 20)
-    today.setDate(1)
-    const RB = today //right border
+    const RB_prep = today
+    let RB = {
+        year: RB_prep.getFullYear(),
+        month: RB_prep.getMonth() + 1 < 10 ? `0${RB_prep.getMonth() + 1}` : RB_prep.getMonth() + 1,
+        date: RB_prep.getDate()
+    }
+    let LB = {
+        year: LB_prep.getFullYear(),
+        month: LB_prep.getMonth() + 1 < 10 ? `0${LB_prep.getMonth() + 1}` : LB_prep.getMonth() + 1,
+        date: '01'
+    }
     return [LB, RB]
 }
 
@@ -45,7 +50,7 @@ function queryProblems(LB, RB) {
             FROM (People INNER JOIN
             (Problems INNER JOIN
             (SELECT handover_date, problem_id FROM Resolutions
-                WHERE datetime(handover_date) BETWEEN '${LB.getFullYear()}-${LB.getMonth() + 1}-${LB.getDate()}' AND '${RB.getFullYear()}-${RB.getMonth() + 1}-${RB.getDate()}')
+                WHERE datetime(handover_date) BETWEEN datetime('${LB.year}-${LB.month}-${LB.date}') AND datetime('${RB.year}-${RB.month}-${RB.date}'))
             ON Problems.id = problem_id)
             ON People.id = Problems.person_id)`
 }
@@ -74,15 +79,16 @@ app.on('ready', () => {
                         desc_cut: row.desc.length > 50 ? row.desc.substring(0, 46) + '...' : row.desc
                     })
                 })
+                resolve('yay')
             })
-            resolve('yay')
         })
         promises.push(prom)
     }
 
     MainDB = new SQLite.Database('./static/database/MainDB.db')
     let Problems = []
-    const borders = getBorders()
+    const currentDate = new Date()
+    const borders = getBorders(currentDate.getFullYear(), currentDate.getMonth())
     const retrieveProbsProm = new Promise((resolve, reject) => {
         MainDB.all(queryProblems(...borders), (err, rows) => {
             if (err)
@@ -96,8 +102,8 @@ app.on('ready', () => {
                     desc: row.desc.length > 70 ? row.desc.substring(0, 66) + '...' : row.desc
                 })
             })
+            resolve('yay')
         })
-        resolve('yay')
     })
     promises.push(retrieveProbsProm)
 
@@ -105,6 +111,7 @@ app.on('ready', () => {
     .then(createMainWindow())
     .then(MainWindow.webContents.on('did-finish-load', () => {
         MainWindow.webContents.send('start_up_data', {classif: Classificator, problems: Problems})
+        db.close()
     }))
 })
 
@@ -211,5 +218,29 @@ ipcMain.on('add_problem', (e, args) => {
                 })
             }
         }
+    })
+})
+
+ipcMain.on('grab_problems', (e, filters) => {
+    const borders = getBorders(filters.year_filter, filters.month_filter)
+    let Problems = []
+    const ProblemsPromise = new Promise((resolve, reject) => {
+        MainDB.all(queryProblems(...borders), (err, rows) => {
+            if (err)
+                console.log(err.message)
+            rows.forEach(row => {
+                Problems.push({
+                    handover_date: row.handover_date,
+                    number: row.number,
+                    respon: row.respon,
+                    fio: row.fio,
+                    desc: row.desc.length > 70 ? row.desc.substring(0, 66) + '...' : row.desc
+                })
+            })
+            resolve(Problems)
+        })
+    })
+    ProblemsPromise.then((result) => {
+        e.reply('problems_grabbed', result)
     })
 })

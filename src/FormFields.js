@@ -34,12 +34,16 @@ class SelectField extends React.Component {
         super(props)
         this.state = {
             value: props.initial,
-            options: props.options
+            options: props.options,
+            wrapped: true,
+            stillOver: false
         }
         this.handleChange = this.handleChange.bind(this)
         this.optionClick = this.optionClick.bind(this)
         this.handleBlur = this.handleBlur.bind(this)
-        this.handleFocus = this.handleFocus.bind(this)
+        this.handleUnwrap = this.handleUnwrap.bind(this)
+        this.handleMouseOverOptions = this.handleMouseOverOptions.bind(this)
+        this.handleMouseLeaveOptions = this.handleMouseLeaveOptions.bind(this)
     }
 
     handleChange(e) {
@@ -69,33 +73,77 @@ class SelectField extends React.Component {
     }
 
     optionClick(e) {
+        const selected = e.target.parentNode.parentNode.parentNode.querySelector('.selected')
         this.setState({
             value: e.target.innerHTML,
-            options: this.props.options
         },
-        () => this.props.onChoice(this.props.fieldName, this.state.value))
+        () => {
+            this.props.onChoice(this.props.fieldName, this.state.value)
+            selected.classList.remove('focused')
+            setTimeout(() => {
+                this.setState({
+                    wrapped: true,
+                    stillOver: false
+                })
+            }, 150)
+        })
     }
 
     handleBlur(e) {
-        if (!e.target.classList.contains('selected'))
-            e.target.parentNode.classList.toggle('focused')
+        if (!this.state.stillOver) {
+            e.target.parentNode.classList.remove('focused')
+            setTimeout(() => {
+                this.setState({
+                    wrapped: true
+                })
+            }, 150)
+        }
     }
 
-    handleFocus(e) {
-        if (e.target.classList.contains('selected')) {
-            e.target.classList.toggle('focused')
-            e.target.querySelector('.select_input').focus()
+    handleUnwrap(e) {
+        if (this.state.wrapped)
+            this.setState({
+                wrapped: false
+            }, () => {
+                setTimeout(() => {
+                    e.target.classList.add('focused')
+                    const input = e.target.querySelector('.select_input')
+                    input.focus()
+                }, 0)
+            })
+        else {
+            e.target.classList.remove('focused')
+            const input = e.target.querySelector('.select_input')
+            input.blur()
+            setTimeout(() => {
+                this.setState({
+                    wrapped: true
+                })
+            }, 150)
         }
+    }
+
+    handleMouseOverOptions(e) {
+        this.setState({
+            stillOver: true
+        })
+    }
+
+    handleMouseLeaveOptions(e) {
+        this.setState({
+            stillOver: false
+        })
     }
 
     render() {
         return (
             <div className="select_wrapper">
-                <div className="selected" tabIndex="-1" onBlur={this.handleBlur} onFocus={this.handleFocus}>
-                     <input type="text" value={this.state.value} onChange={this.handleChange} className="select_input" placeholder={this.props.placeholder}></input>
+                <div className="selected" onClick={this.handleUnwrap}>
+                     <input type="text" value={this.state.value} onBlur={this.handleBlur} onChange={this.handleChange} className="select_input" placeholder={this.props.placeholder}></input>
                      <Arrow className="arrow_select"/>
                 </div>
-                <div className="select_options">
+                {!this.state.wrapped &&
+                <div className="select_options" onMouseOver={this.handleMouseOverOptions} onMouseLeave={this.handleMouseLeaveOptions}>
                     <ul>
                         {this.state.options.map((option, ind) => {
                             return (
@@ -104,6 +152,7 @@ class SelectField extends React.Component {
                         })} 
                     </ul>
                 </div>
+                }
             </div>
         )
     }

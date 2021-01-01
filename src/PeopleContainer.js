@@ -2,7 +2,7 @@ import React from 'react'
 import { ProblemCard } from './ProblemCard.js'
 import { SelectField } from './FormFields.js'
 import NoRecords from '../static/images/no_records.svg'
-import { ipcRenderer, TouchBarOtherItemsProxy } from 'electron'
+import { ipcRenderer } from 'electron'
 import LoadingAnim from '../static/anim/loading.svg'
 
 class PeopleContainer extends React.Component {
@@ -39,8 +39,9 @@ class PeopleContainer extends React.Component {
         this.state = {
             year_filter: new Date().getFullYear(),
             month_filter: new Date().getMonth(),
-            isEmpty: false,
-            loading: false
+            isEmpty: props.problems.length === 0 ? true : false,
+            loading: false,
+            problems: this.props.problems
         }
         this.applyFilter = this.applyFilter.bind(this)
     }
@@ -56,24 +57,35 @@ class PeopleContainer extends React.Component {
     applyFilter(field, value) {
         let val = value
         if (field === 'month_filter')
-            val = this.parseMonthNameToIndex(value) + 1
+            val = this.parseMonthNameToIndex(value)
         this.setState({
             [field]: val,
             loading: true
         }, () => {
             ipcRenderer.send('grab_problems', {year_filter: this.state.year_filter, month_filter: this.state.month_filter})
+            ipcRenderer.on('problems_grabbed', (e, problems) => {
+                if (problems.length === 0)
+                    this.setState({
+                        loading: false,
+                        isEmpty: true,
+                        problems: []
+                    })
+                else
+                    this.setState({
+                        loading: false,
+                        isEmpty: false,
+                        problems: problems
+                    })
+            })
         })
     }
 
     render() {
-        this.props.problems.map((problem) => {
-            console.log(problem)
-        })
         return (
             <div id="people_cont__main_wrapper">
                 <div id="filters">
-                    <SelectField main={true} fieldName="year_filter" placeholder="Выберите год" options={['2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030']} initial={new Date().getFullYear()} onChoice={this.applyFilter} />
-                    <SelectField  main={true} fieldName="month_filter" placeholder="Выберите месяц" options={['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']} initial={this.parseMonth(new Date().getMonth())} onChoice={this.applyFilter} />
+                    <SelectField fieldName="year_filter" placeholder="Выберите год" options={['2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030']} initial={new Date().getFullYear()} onChoice={this.applyFilter} />
+                    <SelectField fieldName="month_filter" placeholder="Выберите месяц" options={['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']} initial={this.parseMonth(new Date().getMonth())} onChoice={this.applyFilter} />
                 </div>
                 <hr className="line_people_container"></hr>
                 <div id="table_headers">
@@ -83,16 +95,22 @@ class PeopleContainer extends React.Component {
                     <h2 className="table_header_item">Ответственный</h2>
                     <h2 className="table_header_item">Описание</h2>
                 </div>
-                <div id="people_container_problems_wrapper" style={{marginBottom: '50px', backgroundColor: '#36393f', width: '90%',
+                <div id="people_container_problems_wrapper" style={{marginBottom: '100px', backgroundColor: '#36393f', width: '90%',
                 minWidth: '860px', height: '60%', minHeight: '250px', borderRadius: '3px'}}>
-                {!this.state.loading &&
+                {!this.state.loading && !this.state.isEmpty &&
                     <div id="people_container">
-                        {this.props.problems.map((problem, index) => <ProblemCard key={index} data={problem} />)}
+                        {this.state.problems.map((problem, index) => <ProblemCard key={index} data={problem} />)}
                     </div>
                 }
-                    {this.state.loading &&
-                        <LoadingAnim width='15%' height="15%" style={{position: 'relative', margin: 'auto', top: '40%'}} />
-                    }
+                {this.state.loading &&
+                    <LoadingAnim width='15%' height="15%" style={{position: 'relative', margin: 'auto', top: '40%'}} />
+                }
+                {this.state.isEmpty &&
+                    <div id="no_problems_wrapper" style={{width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+                        <NoRecords width="60%" height="60%" />
+                        <h2 id="no_problems_descr">Кажется, здесь ничего нет...</h2>
+                    </div>
+                }
                 </div>
             </div>
         )
