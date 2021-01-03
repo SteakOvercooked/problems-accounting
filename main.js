@@ -27,11 +27,11 @@ function queryClassif(ind) {
 
 function getBorders(year, month) {
     let today = new Date(year, month, 1)
-    const LB_prep = today //left border
+    const LB_prep = today // left border
     today.setDate(today.getDate() + 40)
     today.setDate(1)
     today.setDate(today.getDate() - 1)
-    const RB_prep = today
+    const RB_prep = today // right border
     let RB = {
         year: RB_prep.getFullYear(),
         month: RB_prep.getMonth() + 1 < 10 ? `0${RB_prep.getMonth() + 1}` : RB_prep.getMonth() + 1,
@@ -46,29 +46,53 @@ function getBorders(year, month) {
 }
 
 function queryProblems(LB, RB) {
-    return `SELECT Problems.number, handover_date, Problems.respon, People.fio, Problems.desc
+    return `SELECT Problems.number, handover_date, problem_id, person_id, res_id, Problems.respon, People.fio, Problems.desc
             FROM (People INNER JOIN
             (Problems INNER JOIN
-            (SELECT handover_date, problem_id FROM Resolutions
+            (SELECT handover_date, problem_id, id as res_id FROM Resolutions
                 WHERE datetime(handover_date) BETWEEN datetime('${LB.year}-${LB.month}-${LB.date}') AND datetime('${RB.year}-${RB.month}-${RB.date}'))
             ON Problems.id = problem_id)
             ON People.id = Problems.person_id)`
 }
 
+function getProblems(borders) {
+    return new Promise((resolve, reject) => {
+        let Problems = []
+        MainDB.all(queryProblems(...borders), (err, rows) => {
+            if (err)
+                console.log(err.message)
+            rows.forEach(row => {
+                const date = row.handover_date
+                const dateFormat = date.substring(8) + '-' + date.substring(5, 7) + '-' + date.substring(0, 4)
+                Problems.push({
+                    handover_date: dateFormat,
+                    number: row.number,
+                    person_id: row.person_id,
+                    res_id: row.res_id,
+                    problem_id: row.problem_id,
+                    respon: row.respon,
+                    fio: row.fio,
+                    desc: row.desc.length > 60 ? row.desc.substring(0, 57) + '...' : row.desc
+                })
+            })
+            resolve(Problems)
+        })
+    })
+}
+
 app.on('ready', () => {
     let db = new SQLite.Database('./Классификатор/Классификатор.db')
-
-    let Classificator = {
-        0: [],
-        1: [],
-        2: [],
-        3: [],
-        4: []
-    }
     let promises = []
 
-    for(let i = 0; i < 5; i++) {
-        const prom = new Promise((resolve, reject) => {
+    const prom = new Promise((resolve, reject) => {
+        let Classificator = {
+            0: [],
+            1: [],
+            2: [],
+            3: [],
+            4: []
+        }
+        for (let i = 0; i < 5; i++) {
             db.all(queryClassif(i), (err, rows) => {
                 rows.forEach(row => {
                     Classificator[i].push({
@@ -79,40 +103,25 @@ app.on('ready', () => {
                         desc_cut: row.desc.length > 50 ? row.desc.substring(0, 46) + '...' : row.desc
                     })
                 })
-                resolve('yay')
             })
-        })
-        promises.push(prom)
-    }
+        }
+        resolve(Classificator)
+    })
+    promises.push(prom)
 
     MainDB = new SQLite.Database('./static/database/MainDB.db')
-    let Problems = []
     const currentDate = new Date()
     const borders = getBorders(currentDate.getFullYear(), currentDate.getMonth())
-    const retrieveProbsProm = new Promise((resolve, reject) => {
-        MainDB.all(queryProblems(...borders), (err, rows) => {
-            if (err)
-                console.log(err.message)
-            rows.forEach(row => {
-                Problems.push({
-                    handover_date: row.handover_date,
-                    number: row.number,
-                    respon: row.respon,
-                    fio: row.fio,
-                    desc: row.desc.length > 70 ? row.desc.substring(0, 66) + '...' : row.desc
-                })
-            })
-            resolve('yay')
-        })
-    })
-    promises.push(retrieveProbsProm)
+    promises.push(getProblems(borders))
 
     Promise.all(promises)
-    .then(createMainWindow())
-    .then(MainWindow.webContents.on('did-finish-load', () => {
-        MainWindow.webContents.send('start_up_data', {classif: Classificator, problems: Problems})
-        db.close()
-    }))
+    .then((values) => {
+        createMainWindow()
+        MainWindow.webContents.on('did-finish-load', () => {
+            MainWindow.webContents.send('start_up_data', {classif: values[0], problems: values[1]})
+            db.close()
+        })
+    })
 })
 
 ipcMain.on('shut_off', (e, args) => {
@@ -223,24 +232,17 @@ ipcMain.on('add_problem', (e, args) => {
 
 ipcMain.on('grab_problems', (e, filters) => {
     const borders = getBorders(filters.year_filter, filters.month_filter)
-    let Problems = []
-    const ProblemsPromise = new Promise((resolve, reject) => {
-        MainDB.all(queryProblems(...borders), (err, rows) => {
-            if (err)
-                console.log(err.message)
-            rows.forEach(row => {
-                Problems.push({
-                    handover_date: row.handover_date,
-                    number: row.number,
-                    respon: row.respon,
-                    fio: row.fio,
-                    desc: row.desc.length > 70 ? row.desc.substring(0, 66) + '...' : row.desc
-                })
-            })
-            resolve(Problems)
-        })
-    })
-    ProblemsPromise.then((result) => {
+    getProblems(borders).then((result) => {
         e.reply('problems_grabbed', result)
+    })
+})
+
+ipcMain.on('yes_modal', (e, delete_data) => {
+    MainDB.run('DELETE FROM Resolutions WHERE id = ?', delete_data.resolution_id, function (err) {
+        if (err === null)
+            MainDB.run('DELETE FROM Problems WHERE id = ?', delete_data.problem_id, function (err) {
+                if (err === null)
+                    e.reply('records_deleted', null)
+            })
     })
 })

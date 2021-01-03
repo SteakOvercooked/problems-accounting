@@ -190,13 +190,14 @@ class DatePickerField extends React.Component {
                 year: props.datepicked.year,
                 month: props.datepicked.month,
                 date: props.datepicked.date
-            }
+            },
+            active: false
         }
         this.handleBackward = this.handleBackward.bind(this)
         this.handleForward = this.handleForward.bind(this)
         this.handleClick = this.handleClick.bind(this)
         this.handleClickDate = this.handleClickDate.bind(this)
-        this.handleCalendarBlur = this.handleCalendarBlur.bind(this)
+        this.handleMouseLeaveCalendar = this.handleMouseLeaveCalendar.bind(this)
     }
 
     parseMonth(month) {
@@ -244,16 +245,37 @@ class DatePickerField extends React.Component {
     }
 
     handleClick(e) {
-        e.target.parentNode.querySelector('.calendar').classList.toggle('active')
-        e.target.parentNode.querySelector('.calendar').focus()
+        const calendarParent = e.target.parentNode
+        if (!this.state.active)
+            this.setState({
+                active: true
+            }, () => {
+                setTimeout(() => {
+                    calendarParent.querySelector('.calendar').classList.add('active')
+                }, 0)
+            })
+        else {
+            calendarParent.querySelector('.calendar').classList.remove('active')
+            setTimeout(() => {
+                this.setState({
+                    active: false
+                })
+            }, 150)
+        }
     }
 
-    handleCalendarBlur(e) {
-        e.target.classList.toggle('active')
-        const date = this.state.datePicked.date < 10 ? `0${this.state.datePicked.date}` : this.state.datePicked.date
-        const month = this.state.datePicked.month + 1 < 10 ? `0${this.state.datePicked.month + 1}` : this.state.datePicked.month + 1
-        const pickedDateStr = `${this.state.datePicked.year}-${month}-${date}`
-        this.props.onChoice(this.props.fieldName, pickedDateStr)
+    handleMouseLeaveCalendar(e) {
+        document.querySelector('.calendar.active').classList.remove('active')
+        setTimeout(() => {
+            this.setState({
+                active: false
+            }, () => {
+                const date = this.state.datePicked.date < 10 ? `0${this.state.datePicked.date}` : this.state.datePicked.date
+                const month = this.state.datePicked.month + 1 < 10 ? `0${this.state.datePicked.month + 1}` : this.state.datePicked.month + 1
+                const pickedDateStr = `${this.state.datePicked.year}-${month}-${date}`
+                this.props.onChoice(this.props.fieldName, pickedDateStr)
+            })
+        }, 150);
     }
 
     handleClickDate(e) {
@@ -265,9 +287,6 @@ class DatePickerField extends React.Component {
             })
             e.target.classList.add('active')
             this.setState(state => ({
-                currentMonth: state.currentMonth,
-                currentYear: state.currentYear,
-                currentMonthIndex: state.currentMonthIndex,
                 datePicked: {
                     year: state.currentYear,
                     month: state.currentMonthIndex,
@@ -275,7 +294,6 @@ class DatePickerField extends React.Component {
                 }
             }))
         }
-        
     }
 
     render() {
@@ -310,16 +328,18 @@ class DatePickerField extends React.Component {
                     style={{color:'inherit', backgroundColor:'inherit', fontFamily:'inherit', border:'none', outline:'none', fontSize:'1rem', margin:'0 5px', pointerEvents:'none'}} />
                     <DatePickerPic className="date_picker_pic"/>
                 </div>
-                <div className="calendar" onBlur={this.handleCalendarBlur} tabIndex="-2">
-                    <div className="cur_date">
-                        <Arrow onClick={this.handleBackward} className="arrow_date_left" />
-                        <h2 className="lbl">{this.state.currentMonth} {this.state.currentYear}</h2>
-                        <Arrow onClick={this.handleForward} className="arrow_date_right" />
+                {this.state.active &&
+                    <div className="calendar" onMouseLeave={this.handleMouseLeaveCalendar}>
+                        <div className="cur_date">
+                            <Arrow onClick={this.handleBackward} className="arrow_date_left" />
+                            <h2 className="lbl">{this.state.currentMonth} {this.state.currentYear}</h2>
+                            <Arrow onClick={this.handleForward} className="arrow_date_right" />
+                        </div>
+                        <div className="dates">
+                            {dates.map(item => item)}
+                        </div>
                     </div>
-                    <div className="dates">
-                        {dates.map(item => item)}
-                    </div>
-                </div>
+                }
             </div>
         )
     }

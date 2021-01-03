@@ -44,6 +44,8 @@ class PeopleContainer extends React.Component {
             problems: this.props.problems
         }
         this.applyFilter = this.applyFilter.bind(this)
+        this.callForModal = this.callForModal.bind(this)
+        this.refreshData = this.refreshData.bind(this)
     }
 
     parseMonth(index) {
@@ -58,8 +60,15 @@ class PeopleContainer extends React.Component {
         let val = value
         if (field === 'month_filter')
             val = this.parseMonthNameToIndex(value)
+            this.setState({
+                [field]: val
+            }, () => {
+                this.refreshData()
+            })
+    }
+
+    refreshData() {
         this.setState({
-            [field]: val,
             loading: true
         }, () => {
             ipcRenderer.send('grab_problems', {year_filter: this.state.year_filter, month_filter: this.state.month_filter})
@@ -78,6 +87,10 @@ class PeopleContainer extends React.Component {
                     })
             })
         })
+    }
+
+    callForModal(problem_id, resoltuion_id) {
+        this.props.onCallForModal(problem_id, resoltuion_id)
     }
 
     render() {
@@ -99,7 +112,7 @@ class PeopleContainer extends React.Component {
                 minWidth: '860px', height: '60%', minHeight: '250px', borderRadius: '3px'}}>
                 {!this.state.loading && !this.state.isEmpty &&
                     <div id="people_container">
-                        {this.state.problems.map((problem, index) => <ProblemCard key={index} data={problem} />)}
+                        {this.state.problems.map((problem, index) => <ProblemCard onTryDelete={this.callForModal} key={index} data={problem} />)}
                     </div>
                 }
                 {this.state.loading &&

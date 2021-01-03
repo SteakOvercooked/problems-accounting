@@ -5,39 +5,21 @@ import { ipcRenderer } from 'electron'
 import { Navbar } from './Navbar.js'
 import { PeopleContainer } from './PeopleContainer.js'
 import { AddUserForm } from './AddUserForm.js'
+import { ModalYesNo } from './ModalWindows.js'
 
 class App extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            fileToRender: 'index.html'
+            fileToRender: 'index.html',
+            showModal: false,
+            delete_data: null
         }
         this.handleProblemAdded = this.handleProblemAdded.bind(this)
-    }
-
-    componentDidMount() {
-        
-        document.getElementById('close_app')
-        .addEventListener('click', () => {
-            ipcRenderer.send('shut_off', null)
-        })
-
-        document.getElementById('maximize_app')
-        .addEventListener('click', () => {
-            ipcRenderer.send('maximize', null)
-        })
-
-        document.getElementById('minimize_app')
-        .addEventListener('click', () => {
-        ipcRenderer.send('minimize', null)
-        })
-
-        document.getElementById('add_item')
-        .addEventListener('click', () => {
-            this.setState({
-                fileToRender: 'addUserForm.html'
-            })
-        })
+        this.closeModal = this.closeModal.bind(this)
+        this.openModal = this.openModal.bind(this)
+        this.openAddItem = this.openAddItem.bind(this)
+        this.peopleContainerRef = React.createRef()
     }
 
     componentDidUpdate() {
@@ -68,14 +50,45 @@ class App extends React.Component {
         })
     }
 
+    closeModal() {
+        document.querySelector('.modal_wrapper').classList.add('zoomed_out')
+        setTimeout(() => {
+            this.setState({
+                showModal: false
+            })
+        }, 150)
+    }
+
+    openModal(problem_id, resolution_id) {
+        this.setState({
+            delete_data: {
+                problem_id: problem_id,
+                resolution_id: resolution_id
+            },
+            showModal: true
+        })
+        ipcRenderer.on('records_deleted', (e, args) => {
+            this.peopleContainerRef.current.refreshData()
+        })
+    }
+
+    openAddItem() {
+        this.setState({
+            fileToRender: 'addUserForm.html'
+        })
+    }
+
     render() {
         return (
             <div id="main_content">
                 <ControlBar />
                 {this.state.fileToRender === 'index.html' &&
                 <div id="nav_cont_wrapper">
-                    <Navbar />
-                    <PeopleContainer problems={this.props.problems} />
+                    {this.state.showModal &&
+                        <ModalYesNo delete_data={this.state.delete_data} text="Вы уверены?" closeModal={this.closeModal}/>
+                    }
+                    <Navbar onAddItem={this.openAddItem} />
+                    <PeopleContainer ref={this.peopleContainerRef} onCallForModal={this.openModal} problems={this.props.problems} />
                 </div>
                 }
                 {this.state.fileToRender === 'addUserForm.html' &&

@@ -6,6 +6,7 @@ class ProblemCard extends React.Component {
         this.handleClick = this.handleClick.bind(this)
         this.handleMouseLeave = this.handleMouseLeave.bind(this)
         this.handleMouseOver = this.handleMouseOver.bind(this)
+        this.handleDelete = this.handleDelete.bind(this)
         this.state = {
             active : false,
             hover: false
@@ -75,6 +76,10 @@ class ProblemCard extends React.Component {
         }
     }
 
+    handleDelete(e) {
+        this.props.onTryDelete(this.props.data.problem_id, this.props.data.res_id)
+    }
+
     render() {
         return (
             <div className="card_wrapper" onClick={this.handleClick} onMouseOver={this.handleMouseOver} onMouseLeave={this.handleMouseLeave} >
@@ -89,7 +94,7 @@ class ProblemCard extends React.Component {
                 <div className="problem_controls">
                     <button className="app_button_blue" style={{margin: '0 5px 5px 0', fontSize: '0.9rem', padding: '4px'}}>Закрыть</button>
                     <button className="app_button_blue" style={{margin: '0 5px 5px 5px', fontSize: '0.9rem', padding: '4px'}}>Просмотреть</button>
-                    <button className="app_button_red" style={{margin: '0 5px 5px 5px', fontSize: '0.9rem', padding: '4px'}}>Удалить</button>
+                    <button className="app_button_red" onClick={this.handleDelete} style={{margin: '0 5px 5px 5px', fontSize: '0.9rem', padding: '4px'}}>Удалить</button>
                 </div>
                 }
             </div>
