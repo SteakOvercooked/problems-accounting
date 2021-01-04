@@ -12,14 +12,16 @@ class App extends React.Component {
         super(props)
         this.state = {
             fileToRender: 'index.html',
-            showModal: false,
-            delete_data: null
+            showModalYesNo: false,
+            delete_data: null,
+            problems: props.problems
         }
         this.handleProblemAdded = this.handleProblemAdded.bind(this)
         this.closeModal = this.closeModal.bind(this)
         this.openModal = this.openModal.bind(this)
         this.openAddItem = this.openAddItem.bind(this)
         this.peopleContainerRef = React.createRef()
+        this.refreshProblems = this.refreshProblems.bind(this)
     }
 
     componentDidUpdate() {
@@ -47,6 +49,8 @@ class App extends React.Component {
     handleProblemAdded() {
         this.setState({
             fileToRender: 'index.html'
+        }, () => {
+            this.peopleContainerRef.current.refreshData()
         })
     }
 
@@ -54,7 +58,7 @@ class App extends React.Component {
         document.querySelector('.modal_wrapper').classList.add('zoomed_out')
         setTimeout(() => {
             this.setState({
-                showModal: false
+                showModalYesNo: false
             })
         }, 150)
     }
@@ -65,7 +69,7 @@ class App extends React.Component {
                 problem_id: problem_id,
                 resolution_id: resolution_id
             },
-            showModal: true
+            showModalYesNo: true
         })
         ipcRenderer.on('records_deleted', (e, args) => {
             this.peopleContainerRef.current.refreshData()
@@ -78,21 +82,27 @@ class App extends React.Component {
         })
     }
 
+    refreshProblems(problems) {
+        this.setState({
+            problems: problems
+        })
+    }
+
     render() {
         return (
             <div id="main_content">
                 <ControlBar />
                 {this.state.fileToRender === 'index.html' &&
-                <div id="nav_cont_wrapper">
-                    {this.state.showModal &&
+                    <div id="nav_cont_wrapper">
+                    {this.state.showModalYesNo &&
                         <ModalYesNo delete_data={this.state.delete_data} text="Вы уверены?" closeModal={this.closeModal}/>
                     }
-                    <Navbar onAddItem={this.openAddItem} />
-                    <PeopleContainer ref={this.peopleContainerRef} onCallForModal={this.openModal} problems={this.props.problems} />
-                </div>
+                        <Navbar onAddItem={this.openAddItem} />
+                        <PeopleContainer refreshProblems={this.refreshProblems} ref={this.peopleContainerRef} onCallForModal={this.openModal} problems={this.state.problems} />
+                    </div>
                 }
                 {this.state.fileToRender === 'addUserForm.html' &&
-                <AddUserForm classif={this.props.classificator} onProblemAdded={this.handleProblemAdded} />
+                    <AddUserForm classif={this.props.classificator} onProblemAdded={this.handleProblemAdded} />
                 }
             </div>
         )

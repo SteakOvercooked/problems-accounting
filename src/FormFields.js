@@ -1,6 +1,8 @@
+import { ipcRenderer } from 'electron'
 import React from 'react'
 import Arrow from '../static/images/arrow.svg'
 import DatePickerPic from '../static/images/date_picker.svg'
+import SearchFieldIcon from '../static/images/search.svg'
 
 class InputField extends React.Component {
     constructor(props) {
@@ -24,7 +26,7 @@ class InputField extends React.Component {
 
     render() {
         return (
-            <input onChange={this.handleChange} className="form_field" onBlur={this.blurred} type={this.props.type} placeholder={this.props.placeholder}></input>
+            <input onChange={this.handleChange} readOnly={this.props.readonly} value={this.state.value} className={`form_field ${this.props.readonly ? "readonly" : ""}`} onBlur={this.blurred} type={this.props.type} placeholder={this.props.placeholder}></input>
         )
     }
 }
@@ -354,12 +356,16 @@ class SelectFieldClassificator extends React.Component {
             currentOptions: props.options,
             code: '0000.0000.0000.0000',
             approved: props.initial === '' ? false : true,
-            blocked: props.initial === '' ? props.blocked : false
+            blocked: props.initial === '' ? props.blocked : false,
+            wrapped: true,
+            stillOver: false
         }
         this.handleChange = this.handleChange.bind(this)
         this.optionClick = this.optionClick.bind(this)
         this.handleBlur = this.handleBlur.bind(this)
-        this.handleFocus = this.handleFocus.bind(this)
+        this.handleUnwrap = this.handleUnwrap.bind(this)
+        this.handleMouseOverOptions = this.handleMouseOverOptions.bind(this)
+        this.handleMouseLeaveOptions = this.handleMouseLeaveOptions.bind(this)
         this.narrowOptions = this.narrowOptions.bind(this)
         this.family = ['SECTION', 'SUBJ_MATTER', 'THEME', 'PROBLEM', 'SUB_PROBLEM']
     }
@@ -397,6 +403,7 @@ class SelectFieldClassificator extends React.Component {
     }
 
     optionClick(e) {
+        const selected = e.target.parentNode.parentNode.parentNode.parentNode.querySelector('.selected')
         const index = this.family.indexOf(this.props.iden)
         const value = e.target.parentNode.querySelector('.desc_full').innerHTML
         const code = e.target.parentNode.querySelector('.code').innerHTML
@@ -407,20 +414,62 @@ class SelectFieldClassificator extends React.Component {
             currentOptions: this.state.options,
             code: e.target.parentNode.querySelector('.code').innerHTML,
             approved: true
+        }, () => {
+            selected.classList.remove('focused')
+            this.props.onApproved(index, value, code, ownID)
+            setTimeout(() => {
+                this.setState({
+                    wrapped: true,
+                    stillOver: false
+                })
+            }, 150)
         })
-        this.props.onApproved(index, value, code, ownID)
     }
 
     handleBlur(e) {
-        if (!e.target.classList.contains('selected'))
-            e.target.parentNode.classList.toggle('focused')
+        if (!this.state.stillOver) {
+            e.target.parentNode.classList.remove('focused')
+            setTimeout(() => {
+                this.setState({
+                    wrapped: true
+                })
+            }, 150)
+        }
     }
 
-    handleFocus(e) {
-        if (e.target.classList.contains('selected')) {
-            e.target.classList.toggle('focused')
-            e.target.querySelector('.select_input').focus()
+    handleUnwrap(e) {
+        if (this.state.wrapped)
+            this.setState({
+                wrapped: false
+            }, () => {
+                setTimeout(() => {
+                    e.target.classList.add('focused')
+                    const input = e.target.querySelector('.select_input')
+                    input.focus()
+                }, 0)
+            })
+        else {
+            e.target.classList.remove('focused')
+            const input = e.target.querySelector('.select_input')
+            input.blur()
+            setTimeout(() => {
+                this.setState({
+                    wrapped: true
+                })
+            }, 150)
         }
+    }
+
+    handleMouseOverOptions(e) {
+        this.setState({
+            stillOver: true
+        })
+    }
+
+    handleMouseLeaveOptions(e) {
+        this.setState({
+            stillOver: false
+        })
     }
 
     narrowOptions(index, ownindex, pID) {
@@ -453,12 +502,13 @@ class SelectFieldClassificator extends React.Component {
     render() {
         return (
             <div className="select_wrapper">
-                <div className={`selected ${this.state.blocked ? "blocked" : ""}`} tabIndex="-1" onBlur={this.handleBlur} onFocus={this.handleFocus}>
-                     <input type="text" value={this.state.value} onChange={this.handleChange} className="select_input" placeholder={this.props.placeholder}></input>
+                <div className={`selected ${this.state.blocked ? "blocked" : ""}`} onClick={this.handleUnwrap}>
+                     <input type="text" value={this.state.value} onBlur={this.handleBlur} onChange={this.handleChange} className="select_input" placeholder={this.props.placeholder}></input>
                      <Arrow className="arrow_select"/>
                 </div>
-                <div className="select_options">
-                    <ul>
+                {!this.state.wrapped &&
+                    <div className="select_options" onMouseLeave={this.handleMouseLeaveOptions} onMouseOver={this.handleMouseOverOptions}>
+                        <ul>
                         {this.state.currentOptions.map((option, ind) => {
                             return (
                                 <div onClick={this.optionClick} key={option.desc_cut[0] + `${ind}`} style={{width: '100%'}}>
@@ -470,8 +520,9 @@ class SelectFieldClassificator extends React.Component {
                                 </div>
                             )
                         })}
-                    </ul>
-                </div>
+                        </ul>
+                    </div>
+                }
             </div>
         )
     }
@@ -509,4 +560,109 @@ class TextAreaField extends React.Component {
     }
 }
 
-export { InputField, SelectField, DatePickerField, SelectFieldClassificator, TextAreaField }
+class SearchField extends React.Component {
+    constructor(props) {
+        super(props)
+        this.state = {
+            active: false,
+            stillOver: false,
+            wrapped: true,
+            value: '',
+            options: []
+        }
+        this.handleBlur = this.handleBlur.bind(this)
+        this.handleMouseOver = this.handleMouseOver.bind(this)
+        this.handleMouseLeave = this.handleMouseLeave.bind(this)
+        this.handleFocus = this.handleFocus.bind(this)
+        this.handleChange = this.handleChange.bind(this)
+        this.handleChoice = this.handleChoice.bind(this)
+    }
+
+    handleMouseOver(e) {
+        this.setState({
+            stillOver: true
+        })
+    }
+
+    handleMouseLeave(e) {
+        this.setState({
+            stillOver: false
+        })
+    }
+
+    handleBlur(e) {
+        if (!this.state.stillOver)
+            this.setState({
+                active: false
+            })
+    }
+
+    handleFocus(e) {
+        if (!this.state.active) {
+            this.setState({
+                active: true
+            })
+            e.target.querySelector('.search_field_input').focus()
+        }
+    }
+
+    handleChange(e) {
+        if (e.target.value === '') {
+            this.setState({
+                wrapped: true,
+                value: '',
+                options: []
+            })
+        }
+        else {
+            this.setState({
+                value: e.target.value
+            }, () => {
+                ipcRenderer.send('grab_people', e.target.value)
+                ipcRenderer.on('people_grabbed', (ev, people) => {
+                    this.setState({
+                        wrapped: false,
+                        options: people
+                    })
+                })
+            })
+        }
+    }
+
+    handleChoice(e) {
+        console.log(e.target.getAttribute('key'))
+        this.setState({
+            value: e.target.innerHTML,
+            wrapped: true,
+            stillOver: false,
+            active: false,
+            options: []
+        })
+    }
+
+    render() {
+        let ulElems = []
+        if (this.state.options.length === 0) 
+            ulElems.push(<li key={1} className="search_option empty">Ничего не найдено</li>)
+        else
+            this.state.options.forEach((option, ind) => {
+                ulElems.push(<li key={ind} onClick={this.handleChoice} className="search_option">{`${option.fio}, ${option.terr}, ${option.addr}`}</li>)
+            })
+
+        return (
+            <div className="search_field_wrapper">
+                <div className={`search_box_wrapper ${this.state.active ? "active" : ""}`} onClick={this.handleFocus} >
+                    <SearchFieldIcon className="search_field_icon" />
+                    <input onChange={this.handleChange} onBlur={this.handleBlur} className="search_field_input" value={this.state.value} type="text"></input>
+                </div>
+            {!this.state.wrapped &&
+                <ul className="search_field_options">
+                    {ulElems.map(option => option)}
+                </ul>
+            }
+            </div>
+        )
+    }
+}
+
+export { InputField, SelectField, DatePickerField, SelectFieldClassificator, TextAreaField, SearchField }

@@ -77,6 +77,7 @@ class ProblemCard extends React.Component {
     }
 
     handleDelete(e) {
+        e.preventDefault()
         this.props.onTryDelete(this.props.data.problem_id, this.props.data.res_id)
     }
 

@@ -78,13 +78,18 @@ class PeopleContainer extends React.Component {
                         loading: false,
                         isEmpty: true,
                         problems: []
+                    }, () => {
+                        this.props.refreshProblems([])
                     })
                 else
                     this.setState({
                         loading: false,
                         isEmpty: false,
                         problems: problems
+                    }, () => {
+                        this.props.refreshProblems(this.state.problems)
                     })
+                
             })
         })
     }

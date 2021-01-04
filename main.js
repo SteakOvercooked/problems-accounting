@@ -246,3 +246,20 @@ ipcMain.on('yes_modal', (e, delete_data) => {
             })
     })
 })
+
+ipcMain.on('grab_people', (e, pattern) => {
+    new Promise((resolve, reject) => {
+        let People = []
+        MainDB.all(`SELECT * FROM People WHERE fio LIKE '%${pattern}%' LIMIT 30`, function (err, rows) {
+            if (err === null)
+                rows.forEach(row => {
+                    People.push(row)
+                })
+            else
+                console.log(err.message)
+            resolve(People)
+        })
+    }).then(people => {
+        e.reply('people_grabbed', people)
+    })
+})
