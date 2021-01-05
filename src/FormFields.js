@@ -272,10 +272,7 @@ class DatePickerField extends React.Component {
             this.setState({
                 active: false
             }, () => {
-                const date = this.state.datePicked.date < 10 ? `0${this.state.datePicked.date}` : this.state.datePicked.date
-                const month = this.state.datePicked.month + 1 < 10 ? `0${this.state.datePicked.month + 1}` : this.state.datePicked.month + 1
-                const pickedDateStr = `${this.state.datePicked.year}-${month}-${date}`
-                this.props.onChoice(this.props.fieldName, pickedDateStr)
+                this.props.onChoice(this.props.fieldName, this.state.datePicked)
             })
         }, 150);
     }
@@ -317,8 +314,9 @@ class DatePickerField extends React.Component {
         const date = this.state.datePicked.date < 10 ? `0${this.state.datePicked.date}` : this.state.datePicked.date
         const month = this.state.datePicked.month + 1 < 10 ? `0${this.state.datePicked.month + 1}` : this.state.datePicked.month + 1
         const pickedDateStr = `${date}-${month}-${this.state.datePicked.year}`
+        const strCompare = `${this.state.datePicked.date}-${this.state.datePicked.month + 1}-${this.state.datePicked.year}`
         for (let i = 0; i < daysInMonths[this.state.currentMonth]; i++)
-            if (pickedDateStr === `${i + 1}-${this.state.currentMonthIndex + 1}-${this.state.currentYear}`)
+            if (strCompare === `${i + 1}-${this.state.currentMonthIndex + 1}-${this.state.currentYear}`)
                 dates.push(<div key={'month'+i.toString()} className="cell_date active" onClick={this.handleClickDate}>{i + 1}</div>)
             else
                 dates.push(<div key={'month'+i.toString()} className="cell_date" onClick={this.handleClickDate}>{i + 1}</div>)
@@ -607,6 +605,7 @@ class SearchField extends React.Component {
     }
 
     handleChange(e) {
+        this.props.onFieldChange()
         if (e.target.value === '') {
             this.setState({
                 wrapped: true,
@@ -618,7 +617,7 @@ class SearchField extends React.Component {
             this.setState({
                 value: e.target.value
             }, () => {
-                ipcRenderer.send('grab_people', e.target.value)
+                ipcRenderer.send('grab_people', e.target.value.toLowerCase())
                 ipcRenderer.on('people_grabbed', (ev, people) => {
                     this.setState({
                         wrapped: false,
@@ -630,7 +629,8 @@ class SearchField extends React.Component {
     }
 
     handleChoice(e) {
-        console.log(e.target.getAttribute('key'))
+        const index = Number(e.target.getAttribute('data-index'))
+        this.props.onApproved(this.state.options[index])
         this.setState({
             value: e.target.innerHTML,
             wrapped: true,
@@ -646,7 +646,7 @@ class SearchField extends React.Component {
             ulElems.push(<li key={1} className="search_option empty">Ничего не найдено</li>)
         else
             this.state.options.forEach((option, ind) => {
-                ulElems.push(<li key={ind} onClick={this.handleChoice} className="search_option">{`${option.fio}, ${option.terr}, ${option.addr}`}</li>)
+                ulElems.push(<li key={ind} data-index={ind.toString()} onClick={this.handleChoice} className="search_option">{`${option.fio}, ${option.terr}, ${option.addr}`}</li>)
             })
 
         return (

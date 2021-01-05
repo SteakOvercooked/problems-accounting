@@ -950,3 +950,25 @@ body {
 .search_option.empty:hover {
     background-color: inherit;
 }
+
+.alert_info {
+    font-size: 1rem;
+    color: #f04747;
+    font-family: 'Nunito', sans-serif;
+    white-space: nowrap;
+    margin: 0 0 0 10px;
+}
+
+.warning_wrapper.active {
+    opacity: 1;
+}
+
+.warning_wrapper {
+    margin-top: 40%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    width: 100%;
+    opacity: 0;
+    transition: opacity 3s ease-in-out;
+}

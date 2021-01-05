@@ -14,6 +14,7 @@ class AddUserForm extends React.Component {
             activeButton: null,
             file: null,
             chooseFromExisting: false,
+            existingID: null,
             showModalChoose: false,
             classif_code: '',
             loading: false,
@@ -53,6 +54,7 @@ class AddUserForm extends React.Component {
         this.hanldeChooseFromExisting = this.hanldeChooseFromExisting.bind(this)
         this.handleAddNew = this.handleAddNew.bind(this)
         this.handleCloseModal = this.handleCloseModal.bind(this)
+        this.handlePersonChosen = this.handlePersonChosen.bind(this)
     }
 
     componentDidMount() {
@@ -154,7 +156,6 @@ class AddUserForm extends React.Component {
             })
         }
         else {
-            console.log('index is 4, setting a new value')
             let value = this.state.classif_code + ' - ' + this.state.form_data.problem + ` [${this.state.form_data.sub_problem}]`
             new_form_data.choice = value
             this.setState({
@@ -184,8 +185,8 @@ class AddUserForm extends React.Component {
         this.setState({
             loading: true
         })
-        const { form_data, file } = this.state
-        ipcRenderer.send('add_problem', {form_data: form_data, file: file})
+        const { form_data, file, existingID } = this.state
+        ipcRenderer.send('add_problem', {form_data: form_data, file: file, existingID: existingID})
         ipcRenderer.on('problem_added', (e, args) => {
             this.setState({
                 loading: false
@@ -205,7 +206,8 @@ class AddUserForm extends React.Component {
     handleAddNew(e) {
         e.preventDefault()
         this.setState({
-            chooseFromExisting: false
+            chooseFromExisting: false,
+            existingID: null
         }, () => {
             this.personDataFields.forEach(field => {
                 field.current.setState({
@@ -224,11 +226,24 @@ class AddUserForm extends React.Component {
         }, 150)
     }
 
+    handlePersonChosen(person_data) {
+        this.setState({
+            chooseFromExisting: true,
+            existingID: person_data.id
+        }, () => {
+            this.personDataFields[0].current.setState({value: person_data.terr})
+            this.personDataFields[1].current.setState({value: person_data.fio})
+            this.personDataFields[2].current.setState({value: person_data.addr})
+            this.personDataFields[3].current.setState({value: person_data.tel})
+            this.personDataFields[4].current.setState({value: person_data.soc})
+        })
+    }
+
     render() {
         return (
             <form id="user_form">
             {this.state.showModalChoose &&
-                <ModalChooseFromExisting text="Выберите человека:" closeModal={this.handleCloseModal}/>
+                <ModalChooseFromExisting text="Выберите человека:" closeModal={this.handleCloseModal} onPersonChosen={this.handlePersonChosen} />
             }
                 <CloseForm id="close_form"/>
                 <div className="first_piece" style={{width:'100%'}}>

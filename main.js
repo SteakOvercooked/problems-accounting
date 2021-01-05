@@ -80,6 +80,27 @@ function getProblems(borders) {
     })
 }
 
+function insertData(data_obj, col_count, table) {
+    return new Promise((resolve, reject) => {
+        let placeholders = []
+        for (let i = 1; i <= col_count; i++)
+            placeholders.push(`?${i}`)
+        const placeholder_str = placeholders.join(',')
+        MainDB.run(`INSERT INTO ${table} VALUES(${placeholder_str})`, data_obj, function (err) {
+            if (err === null) 
+                resolve(this.lastID)
+            else
+                reject(err.message)
+        })
+    })
+}
+
+function dateToSQLiteDate(date_obj) {
+    const date = date_obj.date < 10 ? `0${date_obj.date}` : date_obj.date
+    const month = date_obj.month + 1 < 10 ? `0${date_obj.month + 1}` : date_obj.month + 1
+    return `${date_obj.year}-${month}-${date}`
+}
+
 app.on('ready', () => {
     let db = new SQLite.Database('./Классификатор/Классификатор.db')
     let promises = []
@@ -137,97 +158,53 @@ ipcMain.on('maximize', (e, args) => {
 })
 
 ipcMain.on('add_problem', (e, args) => {
-    const { form_data, file } = args
+    const { form_data, file, existingID } = args
 
-    MainDB.run('INSERT INTO People VALUES (?1,?2,?3,?4,?5,?6)', {
-        1: null,
-        2: form_data.cor_fio,
-        3: form_data.cor_terr,
-        4: form_data.cor_addr,
-        5: form_data.cor_tel,
-        6: form_data.cor_soc
-    }, function (err) {
-        if (err === null) {
-            const person_id = this.lastID
-            if (file === null) {
-                MainDB.run('INSERT INTO Problems VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)', {
-                    1: null,
-                    2: form_data.prob_num,
-                    3: form_data.leg_branch,
-                    4: form_data.respon,
-                    5: form_data.doc_type,
-                    6: null,
-                    7: null,
-                    8: form_data.sect,
-                    9: form_data.subj_matter,
-                    10: form_data.theme,
-                    11: form_data.problem,
-                    12: form_data.sub_problem,
-                    13: form_data.choice,
-                    14: form_data.desc === '' ? null : form_data.desc,
-                    15: person_id
-                }, function (err) {
-                    const problem_id = this.lastID
-                    if (err === null) {
-                        MainDB.run('INSERT INTO Resolutions VALUES(?1,?2,?3,?4,?5,?6,?7,?8)', {
-                            1: null,
-                            2: form_data.author,
-                            3: form_data.resolut,
-                            4: form_data.handover_date,
-                            5: form_data.fullfil_term,
-                            6: null,
-                            7: null,
-                            8: problem_id
-                        }, function (err) {
-                            if (err === null) {
-                                e.reply('problem_added', null)
-                            }      
-                        })
-                    }
-                })
-            }
-            else {
-                const file_ext = file.split('.').pop()
-                FS.readFile(file, (err, data) => {
-                    MainDB.run('INSERT INTO Problems VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)', {
-                        1: null,
-                        2: form_data.prob_num,
-                        3: form_data.leg_branch,
-                        4: form_data.respon,
-                        5: form_data.doc_type,
-                        6: data,
-                        7: file_ext,
-                        8: form_data.sect,
-                        9: form_data.subj_matter,
-                        10: form_data.theme,
-                        11: form_data.problem,
-                        12: form_data.sub_problem,
-                        13: form_data.choice,
-                        14: form_data.desc,
-                        15: person_id
-                    }, function (err) {
-                        const problem_id = this.lastID
-                        if (err === null) {
-                            MainDB.run('INSERT INTO Resolutions VALUES(?1,?2,?3,?4,?5,?6,?7,?8)', {
-                                1:null,
-                                2: form_data.author,
-                                3: form_data.resolut,
-                                4: form_data.handover_date,
-                                5: form_data.fullfil_term,
-                                6: null,
-                                7: null,
-                                8: problem_id
-                            }, function (err) {
-                                if (err === null) {
-                                    e.reply('problem_added', null)
-                                }      
-                            })
-                        }
-                    })
-                })
-            }
+    let insertPerson = null
+    if (existingID === null)
+        insertPerson = insertData({
+            1: null, 2: form_data.cor_fio,
+            3: form_data.cor_fio.toLowerCase(),
+            4: form_data.cor_terr, 5: form_data.cor_addr,
+            6: form_data.cor_tel, 7: form_data.cor_soc
+        }, 7, 'People')
+    else
+        insertPerson = new Promise((resolve, reject) => { resolve(existingID) })
+
+    const insertProblem = insertPerson.then(personID => {
+        if (file === null)
+            return insertData({
+                1: null, 2: form_data.prob_num, 3: form_data.leg_branch,
+                4: form_data.respon, 5: form_data.doc_type, 6: null, 7: null,
+                8: form_data.sect, 9: form_data.subj_matter, 10: form_data.theme,
+                11: form_data.problem, 12: form_data.sub_problem, 13: form_data.choice,
+                14: form_data.desc, 15: personID
+            }, 15, 'Problems')
+        else {
+            const file_ext = file.split('.').pop()
+            FS.readFile(file, (err, data) => {
+                return insertData({
+                    1: null, 2: form_data.prob_num, 3: form_data.leg_branch,
+                    4: form_data.respon, 5: form_data.doc_type, 6: data, 7: file_ext,
+                    8: form_data.sect, 9: form_data.subj_matter, 10: form_data.theme,
+                    11: form_data.problem, 12: form_data.sub_problem, 13: form_data.choice,
+                    14: form_data.desc, 15: personID
+                }, 15, 'Problems')
+            })
         }
     })
+
+    const insertResolution = insertProblem.then(problemID => {
+        console.log(problemID)
+        return insertData({
+            1: null, 2: form_data.author,
+            3: form_data.resolut, 4: dateToSQLiteDate(form_data.handover_date),
+            5: dateToSQLiteDate(form_data.fullfil_term), 6: null,
+            7: null, 8: problemID
+        }, 8, 'Resolutions')
+    })
+
+    insertResolution.then(() => {e.reply('problem_added', null)})
 })
 
 ipcMain.on('grab_problems', (e, filters) => {
@@ -250,14 +227,15 @@ ipcMain.on('yes_modal', (e, delete_data) => {
 ipcMain.on('grab_people', (e, pattern) => {
     new Promise((resolve, reject) => {
         let People = []
-        MainDB.all(`SELECT * FROM People WHERE fio LIKE '%${pattern}%' LIMIT 30`, function (err, rows) {
-            if (err === null)
+        MainDB.all(`SELECT * FROM People WHERE fio_lower LIKE '%${pattern}%' LIMIT 30`, function (err, rows) {
+            if (err === null) {
                 rows.forEach(row => {
                     People.push(row)
                 })
+                resolve(People)
+            }
             else
-                console.log(err.message)
-            resolve(People)
+                reject(err.message)
         })
     }).then(people => {
         e.reply('people_grabbed', people)

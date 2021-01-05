@@ -1,5 +1,6 @@
 import React from 'react'
 import CloseModal from '../static/images/close_modal.svg'
+import Warning from '../static/images/warning.svg'
 import { ipcMain, ipcRenderer } from 'electron'
 import { SearchField } from '../src/FormFields.js'
 
@@ -48,8 +49,21 @@ class ModalYesNo extends React.Component {
 class ModalChooseFromExisting extends React.Component {
     constructor(props) {
         super(props)
+        this.state = {
+            approved: false,
+            showTip: false,
+            person_data: null
+        }
         this.handleClose = this.handleClose.bind(this)
-        this.handleYes = this.handleYes.bind(this)
+        this.handleConfirm = this.handleConfirm.bind(this)
+        this.handleApproved = this.handleApproved.bind(this)
+        this.handleConfirm = this.handleConfirm.bind(this)
+        this.handleSearchChange = this.handleSearchChange.bind(this)
+        this.warningTimeout = null
+    }
+
+    componentWillUnmount() {
+        clearTimeout(this.warningTimeout)
     }
 
     componentDidMount() {
@@ -62,9 +76,41 @@ class ModalChooseFromExisting extends React.Component {
         this.props.closeModal()
     }
 
-    handleYes() {
-        // ipcRenderer.send('yes_modal', this.props.delete_data)
-        this.props.closeModal()
+    handleSearchChange() {
+        this.setState({
+            approved: false,
+            person_data: null
+        })
+    }
+
+    handleApproved(data) {
+        this.setState({
+            approved: true,
+            person_data: data
+        })
+    }
+
+    handleConfirm(e) {
+        e.preventDefault()
+        if (!this.state.approved) {
+            if (!this.state.showTip)
+                this.setState({
+                    showTip: true
+                }, () => {
+                    setTimeout(() => {
+                        document.querySelector('.warning_wrapper').classList.remove('active')
+                        this.warningTimeout = setTimeout(() => {
+                            this.setState({
+                                showTip: false
+                            })
+                        }, 3000)
+                    }, 0)
+                })
+        }
+        else {
+            this.props.onPersonChosen(this.state.person_data)
+            this.props.closeModal()
+        }
     }
 
     render() {
@@ -76,10 +122,16 @@ class ModalChooseFromExisting extends React.Component {
                     <CloseModal className="close_modal choose" onClick={this.handleClose}/>
                     <div className="modal_info choose">
                         <h2 className="modal_info_text" style={{marginBottom: '15px'}}>{this.props.text}</h2>
-                        <SearchField />
+                        <SearchField onFieldChange={this.handleSearchChange} onApproved={this.handleApproved} />
+                    {this.state.showTip &&
+                        <div className="warning_wrapper active">
+                            <Warning width="25px" height="25px" style={{margin: '0 0 2px 0'}} />
+                            <h2 className="alert_info">Сначала выберите человека!</h2>
+                        </div>
+                    }
                     </div>
                     <div className="modal_controls choose">
-                        <button className="app_button_blue" onClick={this.handleYes} style={{margin: '5px 30px 5px 30px', fontSize: '1.1rem', padding: '6px 25px 6px 25px'}}>Подтвердить</button>
+                        <button className="app_button_blue" onClick={this.handleConfirm} style={{margin: '5px 30px 5px 30px', fontSize: '1.1rem', padding: '6px 25px 6px 25px'}}>Подтвердить</button>
                     </div>
                 </div>
             </div>
