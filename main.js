@@ -25,40 +25,81 @@ function queryClassif(ind) {
     return `SELECT id, parent_id, code, desc FROM CLAS_LVL_${ind}`
 }
 
-function getBorders(year, month) {
-    let today = new Date(year, month, 1)
-    const LB_prep = today // left border
-    today.setDate(today.getDate() + 40)
-    today.setDate(1)
-    today.setDate(today.getDate() - 1)
-    const RB_prep = today // right border
-    let RB = {
+function getBorders(year, month, borders_type) {
+    let LB_prep = null,
+        RB_prep = null,
+        today = null
+    switch(borders_type) {
+        // открытые
+        case 0:
+            today = new Date()
+            RB_prep = new Date(today.valueOf())
+            today.setDate(today.getDate() - 60)
+            LB_prep = today
+            break
+        // закрытые
+        case 1:
+            today = new Date(year, month, 1)
+            LB_prep = new Date(today.valueOf()) // left border
+            today.setDate(today.getDate() + 40)
+            today.setDate(1)
+            today.setDate(today.getDate() - 1)
+            RB_prep = today // right border
+            break
+        case 2:
+            return [null, null]
+    }
+    const RB = {
         year: RB_prep.getFullYear(),
         month: RB_prep.getMonth() + 1 < 10 ? `0${RB_prep.getMonth() + 1}` : RB_prep.getMonth() + 1,
-        date: RB_prep.getDate()
+        date: RB_prep.getDate() < 10 ? `0${RB_prep.getDate()}` : RB_prep.getDate()
     }
-    let LB = {
+    const LB = {
         year: LB_prep.getFullYear(),
         month: LB_prep.getMonth() + 1 < 10 ? `0${LB_prep.getMonth() + 1}` : LB_prep.getMonth() + 1,
-        date: '01'
+        date: LB_prep.getDate() < 10 ? `0${LB_prep.getDate()}` : LB_prep.getDate()
     }
     return [LB, RB]
 }
 
-function queryProblems(LB, RB) {
-    return `SELECT Problems.number, handover_date, problem_id, person_id, res_id, Problems.respon, People.fio, Problems.desc
-            FROM (People INNER JOIN
-            (Problems INNER JOIN
-            (SELECT handover_date, problem_id, id as res_id FROM Resolutions
-                WHERE datetime(handover_date) BETWEEN datetime('${LB.year}-${LB.month}-${LB.date}') AND datetime('${RB.year}-${RB.month}-${RB.date}'))
-            ON Problems.id = problem_id)
-            ON People.id = Problems.person_id)`
+function queryProblems(LB, RB, probs_type) {
+    switch(probs_type) {
+        case 0:
+            return `SELECT days_left, handover_date, problem_id, person_id, res_id, Problems.respon, People.fio, Problems.desc
+                    FROM (People INNER JOIN
+                    (Problems INNER JOIN
+                    (SELECT CAST(julianday(fullfil_term) - julianday('now') + 2 AS INT) AS days_left, handover_date, problem_id, id as res_id FROM Resolutions
+                        WHERE date(handover_date) BETWEEN date('${LB.year}-${LB.month}-${LB.date}') AND date('${RB.year}-${RB.month}-${RB.date}')
+                        AND fullfil_date IS NULL AND date(fullfil_term) >= date('now'))
+                    ON Problems.id = problem_id)
+                    ON People.id = Problems.person_id)`
+        case 1:
+            return `SELECT Problems.number, handover_date, problem_id, person_id, res_id, Problems.respon, People.fio, Problems.desc
+                    FROM (People INNER JOIN
+                    (Problems INNER JOIN
+                    (SELECT handover_date, problem_id, id as res_id FROM Resolutions
+                        WHERE date(handover_date) BETWEEN date('${LB.year}-${LB.month}-${LB.date}') AND date('${RB.year}-${RB.month}-${RB.date}')
+                        AND fullfil_date IS NOT NULL)
+                    ON Problems.id = problem_id)
+                    ON People.id = Problems.person_id)`
+        case 2:
+            return `SELECT days_past, handover_date, problem_id, person_id, res_id, Problems.respon, People.fio, Problems.desc
+                    FROM (People INNER JOIN
+                    (Problems INNER JOIN
+                    (SELECT CAST(julianday('now') - julianday(fullfil_term) AS INT) as days_past, handover_date, problem_id, id as res_id FROM Resolutions
+                        WHERE date(fullfil_term) < date('now') AND fullfil_date IS NULL)
+                    ON Problems.id = problem_id)
+                    ON People.id = Problems.person_id)`
+    }
+    
 }
 
-function getProblems(borders) {
+function getProblems(borders, probs_type) {
+    const column = probs_type === 0 ? 'days_left' :
+        probs_type === 1 ? 'number' : 'days_past'
     return new Promise((resolve, reject) => {
         let Problems = []
-        MainDB.all(queryProblems(...borders), (err, rows) => {
+        MainDB.all(queryProblems(borders[0], borders[1], probs_type), (err, rows) => {
             if (err)
                 console.log(err.message)
             rows.forEach(row => {
@@ -66,7 +107,7 @@ function getProblems(borders) {
                 const dateFormat = date.substring(8) + '-' + date.substring(5, 7) + '-' + date.substring(0, 4)
                 Problems.push({
                     handover_date: dateFormat,
-                    number: row.number,
+                    [column]: row[column],
                     person_id: row.person_id,
                     res_id: row.res_id,
                     problem_id: row.problem_id,
@@ -132,8 +173,8 @@ app.on('ready', () => {
 
     MainDB = new SQLite.Database('./static/database/MainDB.db')
     const currentDate = new Date()
-    const borders = getBorders(currentDate.getFullYear(), currentDate.getMonth())
-    promises.push(getProblems(borders))
+    const borders = getBorders(currentDate.getFullYear(), currentDate.getMonth(), 0)
+    promises.push(getProblems(borders, 0))
 
     Promise.all(promises)
     .then((values) => {
@@ -170,46 +211,48 @@ ipcMain.on('add_problem', (e, args) => {
         }, 7, 'People')
     else
         insertPerson = new Promise((resolve, reject) => { resolve(existingID) })
-
+    
     const insertProblem = insertPerson.then(personID => {
-        if (file === null)
-            return insertData({
-                1: null, 2: form_data.prob_num, 3: form_data.leg_branch,
-                4: form_data.respon, 5: form_data.doc_type, 6: null, 7: null,
-                8: form_data.sect, 9: form_data.subj_matter, 10: form_data.theme,
-                11: form_data.problem, 12: form_data.sub_problem, 13: form_data.choice,
-                14: form_data.desc, 15: personID
-            }, 15, 'Problems')
-        else {
-            const file_ext = file.split('.').pop()
-            FS.readFile(file, (err, data) => {
-                return insertData({
+        return new Promise((resolve, reject) => {
+            if (file === null) {
+                resolve(insertData({
                     1: null, 2: form_data.prob_num, 3: form_data.leg_branch,
-                    4: form_data.respon, 5: form_data.doc_type, 6: data, 7: file_ext,
+                    4: form_data.respon, 5: form_data.doc_type, 6: null, 7: null,
                     8: form_data.sect, 9: form_data.subj_matter, 10: form_data.theme,
                     11: form_data.problem, 12: form_data.sub_problem, 13: form_data.choice,
                     14: form_data.desc, 15: personID
-                }, 15, 'Problems')
-            })
-        }
+                }, 15, 'Problems'))
+            }
+            else {
+                const file_ext = file.split('.').pop()
+                FS.readFile(file, (err, data) => {
+                    resolve(insertData({
+                        1: null, 2: form_data.prob_num, 3: form_data.leg_branch,
+                        4: form_data.respon, 5: form_data.doc_type, 6: data, 7: file_ext,
+                        8: form_data.sect, 9: form_data.subj_matter, 10: form_data.theme,
+                        11: form_data.problem, 12: form_data.sub_problem, 13: form_data.choice,
+                        14: form_data.desc, 15: personID
+                    }, 15, 'Problems'))
+                })
+            }
+        })
     })
-
-    const insertResolution = insertProblem.then(problemID => {
-        console.log(problemID)
-        return insertData({
+    insertProblem.then(problemID => {
+        insertData({
             1: null, 2: form_data.author,
             3: form_data.resolut, 4: dateToSQLiteDate(form_data.handover_date),
             5: dateToSQLiteDate(form_data.fullfil_term), 6: null,
             7: null, 8: problemID
-        }, 8, 'Resolutions')
+        }, 8, 'Resolutions').then(() => {e.reply('problem_added', null)})
     })
-
-    insertResolution.then(() => {e.reply('problem_added', null)})
 })
 
 ipcMain.on('grab_problems', (e, filters) => {
-    const borders = getBorders(filters.year_filter, filters.month_filter)
-    getProblems(borders).then((result) => {
+    const TF = filters.type_filter
+    const type_index = TF === 'Открытые' ? 0 :
+        TF === 'Закрытые' ? 1 : 2
+    const borders = getBorders(filters.year_filter, filters.month_filter, type_index)
+    getProblems(borders, type_index).then((result) => {
         e.reply('problems_grabbed', result)
     })
 })
@@ -239,5 +282,22 @@ ipcMain.on('grab_people', (e, pattern) => {
         })
     }).then(people => {
         e.reply('people_grabbed', people)
+    })
+})
+
+ipcMain.on('close_problem', (e, close_data) => {
+    new Promise((resolve, reject) => {
+        MainDB.run('UPDATE Resolutions SET result = ?1, fullfil_date = ?2 WHERE id = ?3', {
+            1: close_data.result,
+            2: dateToSQLiteDate(close_data.fullfil_date),
+            3: close_data.res_id
+        }, (err) => {
+            if (err === null)
+                resolve()
+            else
+                reject(err.message)
+        })
+    }).then(() => {
+        e.reply('problem_closed', null)
     })
 })

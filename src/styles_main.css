@@ -96,7 +96,6 @@ body {
     height: 100%;
     overflow-y: auto;
     border-radius: 3px;
-    padding: 4px;
 }
 
 #people_container::-webkit-scrollbar {
@@ -256,6 +255,7 @@ body {
     transform: translateX(-50%);
     min-width: 350px;
     max-width: 500px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .select_options::-webkit-scrollbar {
@@ -319,6 +319,7 @@ body {
     border:none;
     outline:none;
     transition: all 0.15s ease-in-out;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .calendar.active {
@@ -558,6 +559,10 @@ body {
     cursor: pointer;
 }
 
+.card_data.red {
+    color: #f04747;
+}
+
 .problem_info {
     display: grid;
     grid-template-columns: 2fr 2fr 4fr 3fr 5fr;
@@ -598,6 +603,10 @@ body {
     margin: 0px 2px;
 }
 
+.card_wrapper.outdated {
+    border-top: 1px solid #f04747;
+}
+
 .card_wrapper.active {
     background-color: #2f3136;
     border-color: #2f3136;
@@ -617,6 +626,16 @@ body {
     border: 1px solid #494c56;
     border-radius: 5px;
     background-color: #494c56;
+}
+
+.card_wrapper.outdated.hover {
+    border: 1px solid rgba(240, 71, 71, 0.7);
+    border-radius: 5px;
+    background-color: rgba(240, 71, 71, 0.7);
+}
+
+.card_wrapper.outdated.hover .problem_info {
+    background-color: rgba(240, 71, 71, 0.7);
 }
 
 .card_wrapper.hover .problem_info {
@@ -827,9 +846,25 @@ body {
     height: 10%;
 }
 
-.close_modal.choose {
+.close_modal.choose, .close_modal.close_problem {
     left: 90%;
     top: 5%;
+}
+
+.modal_content.close_problem {
+    height: 600px;
+    width: 550px;
+}
+
+.modal_info.close_problem {
+    height: 85%;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.modal_controls.close_problem {
+    height: 15%;
 }
 
 .search_field_wrapper {
@@ -971,4 +1006,8 @@ body {
     width: 100%;
     opacity: 0;
     transition: opacity 3s ease-in-out;
+}
+
+.warning_wrapper.close_problem {
+    margin-top: 30%;
 }

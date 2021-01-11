@@ -5,7 +5,7 @@ import { ipcRenderer } from 'electron'
 import { Navbar } from './Navbar.js'
 import { PeopleContainer } from './PeopleContainer.js'
 import { AddUserForm } from './AddUserForm.js'
-import { ModalYesNo } from './ModalWindows.js'
+import { ModalYesNo, ModalCloseProblem } from './ModalWindows.js'
 
 class App extends React.Component {
     constructor(props) {
@@ -13,37 +13,19 @@ class App extends React.Component {
         this.state = {
             fileToRender: 'index.html',
             showModalYesNo: false,
+            showModalCP: false,
             delete_data: null,
+            close_data: null,
             problems: props.problems
         }
         this.handleProblemAdded = this.handleProblemAdded.bind(this)
         this.closeModal = this.closeModal.bind(this)
         this.openModal = this.openModal.bind(this)
         this.openAddItem = this.openAddItem.bind(this)
+        this.openModalCP = this.openModalCP.bind(this)
         this.peopleContainerRef = React.createRef()
         this.refreshProblems = this.refreshProblems.bind(this)
-    }
-
-    componentDidUpdate() {
-        if (this.state.fileToRender === 'addUserForm.html') {
-
-            document.getElementById('close_form')
-            .addEventListener('click', () => {
-                this.setState({
-                    fileToRender: 'index.html'
-                })
-            })
-        }
-        
-        if (this.state.fileToRender === 'index.html') {
-
-            document.getElementById('add_item')
-            .addEventListener('click', () => {
-                this.setState({
-                    fileToRender: 'addUserForm.html'
-                })
-            })
-        }
+        this.closeAddUser = this.closeAddUser.bind(this)
     }
 
     handleProblemAdded() {
@@ -54,11 +36,11 @@ class App extends React.Component {
         })
     }
 
-    closeModal() {
+    closeModal(modal_type) {
         document.querySelector('.modal_wrapper').classList.add('zoomed_out')
         setTimeout(() => {
             this.setState({
-                showModalYesNo: false
+                [modal_type]: false
             })
         }, 150)
     }
@@ -76,6 +58,18 @@ class App extends React.Component {
         })
     }
 
+    openModalCP(res_id) {
+        this.setState({
+            close_data: {
+                res_id: res_id
+            },
+            showModalCP: true
+        })
+        ipcRenderer.on('problem_closed', (e, args) => {
+            this.peopleContainerRef.current.refreshData()
+        })
+    }
+
     openAddItem() {
         this.setState({
             fileToRender: 'addUserForm.html'
@@ -88,6 +82,12 @@ class App extends React.Component {
         })
     }
 
+    closeAddUser() {
+        this.setState({
+            fileToRender: 'index.html'
+        })
+    }
+
     render() {
         return (
             <div id="main_content">
@@ -95,14 +95,18 @@ class App extends React.Component {
                 {this.state.fileToRender === 'index.html' &&
                     <div id="nav_cont_wrapper">
                     {this.state.showModalYesNo &&
-                        <ModalYesNo delete_data={this.state.delete_data} text="Вы уверены?" closeModal={this.closeModal}/>
+                        <ModalYesNo delete_data={this.state.delete_data} text="Вы уверены?" closeModal={this.closeModal} />
+                    }
+                    {this.state.showModalCP &&
+                        <ModalCloseProblem close_data={this.state.close_data} text="Закройте обращение" closeModal={this.closeModal} />
                     }
                         <Navbar onAddItem={this.openAddItem} />
-                        <PeopleContainer refreshProblems={this.refreshProblems} ref={this.peopleContainerRef} onCallForModal={this.openModal} problems={this.state.problems} />
+                        <PeopleContainer refreshProblems={this.refreshProblems} ref={this.peopleContainerRef} onCallForModal={this.openModal}
+                        problems={this.state.problems} onCallForModalCP={this.openModalCP} />
                     </div>
                 }
                 {this.state.fileToRender === 'addUserForm.html' &&
-                    <AddUserForm classif={this.props.classificator} onProblemAdded={this.handleProblemAdded} />
+                    <AddUserForm classif={this.props.classificator} onProblemAdded={this.handleProblemAdded} closeAddUser={this.closeAddUser} />
                 }
             </div>
         )

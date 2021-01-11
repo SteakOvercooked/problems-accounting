@@ -26,7 +26,8 @@ class InputField extends React.Component {
 
     render() {
         return (
-            <input onChange={this.handleChange} readOnly={this.props.readonly} value={this.state.value} className={`form_field ${this.props.readonly ? "readonly" : ""}`} onBlur={this.blurred} type={this.props.type} placeholder={this.props.placeholder}></input>
+            <input onChange={this.handleChange} readOnly={this.props.readonly} value={this.state.value} className={`form_field ${this.props.readonly ? "readonly" : ""}`}
+            onBlur={this.blurred} type={this.props.type} placeholder={this.props.placeholder} style={this.props.styleExtra} ></input>
         )
     }
 }
@@ -38,7 +39,8 @@ class SelectField extends React.Component {
             value: props.initial,
             options: props.options,
             wrapped: true,
-            stillOver: false
+            stillOver: false,
+            blocked: props.blocked
         }
         this.handleChange = this.handleChange.bind(this)
         this.optionClick = this.optionClick.bind(this)
@@ -140,7 +142,7 @@ class SelectField extends React.Component {
     render() {
         return (
             <div className="select_wrapper">
-                <div className="selected" onClick={this.handleUnwrap}>
+                <div className={`selected ${this.state.blocked ? "blocked" : ""}`} onClick={this.handleUnwrap}>
                      <input type="text" value={this.state.value} onBlur={this.handleBlur} onChange={this.handleChange} className="select_input" placeholder={this.props.placeholder}></input>
                      <Arrow className="arrow_select"/>
                 </div>
@@ -200,6 +202,10 @@ class DatePickerField extends React.Component {
         this.handleClick = this.handleClick.bind(this)
         this.handleClickDate = this.handleClickDate.bind(this)
         this.handleMouseLeaveCalendar = this.handleMouseLeaveCalendar.bind(this)
+    }
+
+    componentDidMount() {
+        this.props.onChoice(this.props.fieldName, this.state.datePicked)
     }
 
     parseMonth(month) {

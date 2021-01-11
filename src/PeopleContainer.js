@@ -39,6 +39,7 @@ class PeopleContainer extends React.Component {
         this.state = {
             year_filter: new Date().getFullYear(),
             month_filter: new Date().getMonth(),
+            type_filter: 'Открытые',
             isEmpty: props.problems.length === 0 ? true : false,
             loading: false,
             problems: this.props.problems
@@ -46,6 +47,8 @@ class PeopleContainer extends React.Component {
         this.applyFilter = this.applyFilter.bind(this)
         this.callForModal = this.callForModal.bind(this)
         this.refreshData = this.refreshData.bind(this)
+        this.callForModalCP = this.callForModalCP.bind(this)
+        this.selectRefs = [React.createRef(), React.createRef()]
     }
 
     parseMonth(index) {
@@ -60,18 +63,32 @@ class PeopleContainer extends React.Component {
         let val = value
         if (field === 'month_filter')
             val = this.parseMonthNameToIndex(value)
-            this.setState({
-                [field]: val
-            }, () => {
-                this.refreshData()
-            })
+        if (field === 'type_filter') {
+            if (value !== 'Закрытые')
+                this.selectRefs.forEach(item => {
+                    item.current.setState({
+                        blocked: true
+                    })
+                })
+            else
+                this.selectRefs.forEach(item => {
+                    item.current.setState({
+                        blocked: false
+                    })
+                })
+        }
+        this.setState({
+            [field]: val
+        }, () => {
+            this.refreshData()
+        })
     }
 
     refreshData() {
         this.setState({
             loading: true
         }, () => {
-            ipcRenderer.send('grab_problems', {year_filter: this.state.year_filter, month_filter: this.state.month_filter})
+            ipcRenderer.send('grab_problems', {year_filter: this.state.year_filter, month_filter: this.state.month_filter, type_filter: this.state.type_filter})
             ipcRenderer.on('problems_grabbed', (e, problems) => {
                 if (problems.length === 0)
                     this.setState({
@@ -89,7 +106,6 @@ class PeopleContainer extends React.Component {
                     }, () => {
                         this.props.refreshProblems(this.state.problems)
                     })
-                
             })
         })
     }
@@ -98,17 +114,30 @@ class PeopleContainer extends React.Component {
         this.props.onCallForModal(problem_id, resoltuion_id)
     }
 
+    callForModalCP(res_id) {
+        this.props.onCallForModalCP(res_id)
+    }
+
     render() {
         return (
             <div id="people_cont__main_wrapper">
                 <div id="filters">
-                    <SelectField fieldName="year_filter" placeholder="Выберите год" options={['2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030']} initial={new Date().getFullYear()} onChoice={this.applyFilter} />
-                    <SelectField fieldName="month_filter" placeholder="Выберите месяц" options={['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']} initial={this.parseMonth(new Date().getMonth())} onChoice={this.applyFilter} />
+                    <SelectField ref={this.selectRefs[0]} fieldName="year_filter" placeholder="Выберите год" options={['2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030']} initial={new Date().getFullYear()} onChoice={this.applyFilter} blocked={true} />
+                    <SelectField ref={this.selectRefs[1]} fieldName="month_filter" placeholder="Выберите месяц" options={['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']} initial={this.parseMonth(new Date().getMonth())} onChoice={this.applyFilter} blocked={true} />
+                    <SelectField fieldName="type_filter" placeholder="Выберите тип" options={['Открытые', 'Закрытые', 'Просроченные']} initial='Открытые' onChoice={this.applyFilter} />
                 </div>
                 <hr className="line_people_container"></hr>
                 <div id="table_headers">
                     <h2 className="table_header_item">Дата обращения</h2>
+                {this.state.type_filter === 'Закрытые' &&
                     <h2 className="table_header_item">Номер обращения</h2>
+                }
+                {this.state.type_filter === 'Открытые' &&
+                    <h2 className="table_header_item">Дней осталось</h2>
+                }
+                {this.state.type_filter === 'Просроченные' &&
+                    <h2 className="table_header_item">Дней просрочено</h2>
+                }
                     <h2 className="table_header_item">Обратившийся</h2>
                     <h2 className="table_header_item">Ответственный</h2>
                     <h2 className="table_header_item">Описание</h2>
@@ -117,7 +146,8 @@ class PeopleContainer extends React.Component {
                 minWidth: '860px', height: '60%', minHeight: '250px', borderRadius: '3px'}}>
                 {!this.state.loading && !this.state.isEmpty &&
                     <div id="people_container">
-                        {this.state.problems.map((problem, index) => <ProblemCard onTryDelete={this.callForModal} key={index} data={problem} />)}
+                        {this.state.problems.map((problem, index) => <ProblemCard onTryDelete={this.callForModal} onTryCloseProblem={this.callForModalCP} key={index}
+                        data={problem} type={this.state.type_filter} />)}
                     </div>
                 }
                 {this.state.loading &&

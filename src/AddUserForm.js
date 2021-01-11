@@ -55,6 +55,7 @@ class AddUserForm extends React.Component {
         this.handleAddNew = this.handleAddNew.bind(this)
         this.handleCloseModal = this.handleCloseModal.bind(this)
         this.handlePersonChosen = this.handlePersonChosen.bind(this)
+        this.handleFormClose = this.handleFormClose.bind(this)
     }
 
     componentDidMount() {
@@ -239,13 +240,17 @@ class AddUserForm extends React.Component {
         })
     }
 
+    handleFormClose(e) {
+        this.props.closeAddUser()
+    }
+
     render() {
         return (
             <form id="user_form">
             {this.state.showModalChoose &&
                 <ModalChooseFromExisting text="Выберите человека:" closeModal={this.handleCloseModal} onPersonChosen={this.handlePersonChosen} />
             }
-                <CloseForm id="close_form"/>
+                <CloseForm id="close_form" onClick={this.handleFormClose} />
                 <div className="first_piece" style={{width:'100%'}}>
                     <div style={{backgroundColor:'inherit', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100%'}}>
                         <InputField type="text" placeholder="№ обращения" initial={this.state.form_data.prob_num} fieldName="prob_num" onLeave={this.handleFieldLeave} />
