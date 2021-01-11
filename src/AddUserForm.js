@@ -56,6 +56,20 @@ class AddUserForm extends React.Component {
         this.handleCloseModal = this.handleCloseModal.bind(this)
         this.handlePersonChosen = this.handlePersonChosen.bind(this)
         this.handleFormClose = this.handleFormClose.bind(this)
+        this.authors = this.props.lists.authors.map(author => author.item)
+        this.responsibles = this.props.lists.responsibles.map(responsible => responsible.item)
+        this.branches = this.props.lists.branches.map(branch => branch.item)
+        ipcRenderer.on('problem_added', (e, args) => {
+            this.setState({
+                loading: false
+            }, () => {
+                this.props.onProblemAdded()
+            })
+        })
+    }
+
+    componentWillUnmount() {
+        ipcRenderer.removeAllListeners('problem_added')
     }
 
     componentDidMount() {
@@ -188,13 +202,6 @@ class AddUserForm extends React.Component {
         })
         const { form_data, file, existingID } = this.state
         ipcRenderer.send('add_problem', {form_data: form_data, file: file, existingID: existingID})
-        ipcRenderer.on('problem_added', (e, args) => {
-            this.setState({
-                loading: false
-            }, () => {
-                this.props.onProblemAdded()
-            })
-        })
     }
 
     hanldeChooseFromExisting(e) {
@@ -280,8 +287,8 @@ class AddUserForm extends React.Component {
                         {this.state.tabToRender === 'doc_info' &&
                             <div style={{width:'100%', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center'}}>
                                 <div style={{display:'flex', justifyContent:'flex-start', alignItems:'center'}}>
-                                    <SelectField fieldName="leg_branch" placeholder="Орган власти" options={['Администрация г. Радужный']} initial={this.state.form_data.leg_branch} onChoice={this.handleFieldLeave} />
-                                    <SelectField fieldName="respon" placeholder="Ответственный" options={['Дядя', 'тетя']} initial={this.state.form_data.respon} onChoice={this.handleFieldLeave} />
+                                    <SelectField fieldName="leg_branch" placeholder="Орган власти" options={this.branches} initial={this.state.form_data.leg_branch} onChoice={this.handleFieldLeave} />
+                                    <SelectField fieldName="respon" placeholder="Ответственный" options={this.responsibles} initial={this.state.form_data.respon} onChoice={this.handleFieldLeave} />
                                     <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center'}}>
                                         <SelectField fieldName="doc_type" placeholder="Вид документа" options={['Жалоба', 'Заявление', 'Запрос', 'Предложение']} initial={this.state.form_data.doc_type} onChoice={this.handleFieldLeave} />
                                         <button style={{marginLeft: '10px', padding: '10px', borderWidth: '0px'}} className="app_button_blue" onClick={this.handleFileInput}>Прикрепить документ</button>
@@ -308,7 +315,7 @@ class AddUserForm extends React.Component {
                         {this.state.tabToRender === 'resol' &&
                             <div>
                                 <div style={{display: 'flex', width: '100%', justifyContent: 'center', alignItems: 'center'}}>
-                                    <SelectField fieldName="author" placeholder="Автор" options={['Дада я', 'Kemical', 'Empty lol']} initial={this.state.form_data.author} onChoice={this.handleFieldLeave} />
+                                    <SelectField fieldName="author" placeholder="Автор" options={this.authors} initial={this.state.form_data.author} onChoice={this.handleFieldLeave} />
                                     <SelectField fieldName="resolut" placeholder="Резолюция" options={['Направлено на рассмотрение с ответом', 'Направлено на рассмотрение с ответом (контроль)', 'Проверка']} initial={this.state.form_data.resolut} onChoice={this.handleFieldLeave} />
                                 </div>
                                 <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'flex-start', alignItems:'center', margin:'10px 0px'}}>

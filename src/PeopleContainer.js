@@ -49,6 +49,28 @@ class PeopleContainer extends React.Component {
         this.refreshData = this.refreshData.bind(this)
         this.callForModalCP = this.callForModalCP.bind(this)
         this.selectRefs = [React.createRef(), React.createRef()]
+        ipcRenderer.on('problems_grabbed', (e, problems) => {
+            if (problems.length === 0)
+                this.setState({
+                    loading: false,
+                    isEmpty: true,
+                    problems: []
+                }, () => {
+                    this.props.refreshProblems([])
+                })
+            else
+                this.setState({
+                    loading: false,
+                    isEmpty: false,
+                    problems: problems
+                }, () => {
+                    this.props.refreshProblems(this.state.problems)
+                })
+        })
+    }
+
+    componentWillUnmount() {
+        ipcRenderer.removeAllListeners('problems_grabbed')
     }
 
     parseMonth(index) {
@@ -89,24 +111,6 @@ class PeopleContainer extends React.Component {
             loading: true
         }, () => {
             ipcRenderer.send('grab_problems', {year_filter: this.state.year_filter, month_filter: this.state.month_filter, type_filter: this.state.type_filter})
-            ipcRenderer.on('problems_grabbed', (e, problems) => {
-                if (problems.length === 0)
-                    this.setState({
-                        loading: false,
-                        isEmpty: true,
-                        problems: []
-                    }, () => {
-                        this.props.refreshProblems([])
-                    })
-                else
-                    this.setState({
-                        loading: false,
-                        isEmpty: false,
-                        problems: problems
-                    }, () => {
-                        this.props.refreshProblems(this.state.problems)
-                    })
-            })
         })
     }
 

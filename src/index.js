@@ -6,16 +6,18 @@ import { Navbar } from './Navbar.js'
 import { PeopleContainer } from './PeopleContainer.js'
 import { AddUserForm } from './AddUserForm.js'
 import { ModalYesNo, ModalCloseProblem } from './ModalWindows.js'
+import { AlterLists } from '../src/AlterLists.js'
 
 class App extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            fileToRender: 'index.html',
+            pageToRender: 'main',
             showModalYesNo: false,
             showModalCP: false,
             delete_data: null,
             close_data: null,
+            lists: null,
             problems: props.problems
         }
         this.handleProblemAdded = this.handleProblemAdded.bind(this)
@@ -25,12 +27,26 @@ class App extends React.Component {
         this.openModalCP = this.openModalCP.bind(this)
         this.peopleContainerRef = React.createRef()
         this.refreshProblems = this.refreshProblems.bind(this)
-        this.closeAddUser = this.closeAddUser.bind(this)
+        this.openMain = this.openMain.bind(this)
+        this.openAlterLists = this.openAlterLists.bind(this)
+        ipcRenderer.on('lists_grabbed', (e, result) => {
+            this.setState({
+                lists: {
+                    authors: result.authors,
+                    responsibles: result.responsibles,
+                    branches: result.branches
+                }
+            }, () => {
+                this.setState({
+                    pageToRender: result.page
+                })
+            })
+        })
     }
 
     handleProblemAdded() {
         this.setState({
-            fileToRender: 'index.html'
+            pageToRender: 'main'
         }, () => {
             this.peopleContainerRef.current.refreshData()
         })
@@ -71,9 +87,7 @@ class App extends React.Component {
     }
 
     openAddItem() {
-        this.setState({
-            fileToRender: 'addUserForm.html'
-        })
+        ipcRenderer.send('grab_lists', 'addUser')
     }
 
     refreshProblems(problems) {
@@ -82,17 +96,21 @@ class App extends React.Component {
         })
     }
 
-    closeAddUser() {
+    openMain() {
         this.setState({
-            fileToRender: 'index.html'
+            pageToRender: 'main'
         })
+    }
+
+    openAlterLists() {
+        ipcRenderer.send('grab_lists', 'alterLists')
     }
 
     render() {
         return (
             <div id="main_content">
                 <ControlBar />
-                {this.state.fileToRender === 'index.html' &&
+                {this.state.pageToRender === 'main' &&
                     <div id="nav_cont_wrapper">
                     {this.state.showModalYesNo &&
                         <ModalYesNo delete_data={this.state.delete_data} text="Вы уверены?" closeModal={this.closeModal} />
@@ -100,13 +118,16 @@ class App extends React.Component {
                     {this.state.showModalCP &&
                         <ModalCloseProblem close_data={this.state.close_data} text="Закройте обращение" closeModal={this.closeModal} />
                     }
-                        <Navbar onAddItem={this.openAddItem} />
+                        <Navbar onAddItem={this.openAddItem} onOpenAlterLists={this.openAlterLists} />
                         <PeopleContainer refreshProblems={this.refreshProblems} ref={this.peopleContainerRef} onCallForModal={this.openModal}
                         problems={this.state.problems} onCallForModalCP={this.openModalCP} />
                     </div>
                 }
-                {this.state.fileToRender === 'addUserForm.html' &&
-                    <AddUserForm classif={this.props.classificator} onProblemAdded={this.handleProblemAdded} closeAddUser={this.closeAddUser} />
+                {this.state.pageToRender === 'addUser' &&
+                    <AddUserForm classif={this.props.classificator} onProblemAdded={this.handleProblemAdded} closeAddUser={this.openMain} lists={this.state.lists} />
+                }
+                {this.state.pageToRender === 'alterLists' &&
+                    <AlterLists lists={this.state.lists} closeAlterLists={this.openMain} />
                 }
             </div>
         )

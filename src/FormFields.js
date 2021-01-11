@@ -3,6 +3,7 @@ import React from 'react'
 import Arrow from '../static/images/arrow.svg'
 import DatePickerPic from '../static/images/date_picker.svg'
 import SearchFieldIcon from '../static/images/search.svg'
+import LoadingAnim from '../static/anim/loading.svg'
 
 class InputField extends React.Component {
     constructor(props) {
@@ -582,6 +583,10 @@ class SearchField extends React.Component {
         this.handleChoice = this.handleChoice.bind(this)
     }
 
+    componentWillUnmount() {
+        ipcRenderer.removeAllListeners('people_grabbed')
+    }
+
     handleMouseOver(e) {
         this.setState({
             stillOver: true
@@ -671,4 +676,87 @@ class SearchField extends React.Component {
     }
 }
 
-export { InputField, SelectField, DatePickerField, SelectFieldClassificator, TextAreaField, SearchField }
+class FormList extends React.Component {
+    constructor(props) {
+        super(props)
+        this.state = {
+            value: '',
+            options: props.data,
+            loading: false
+        }
+        this.handleAddItem = this.handleAddItem.bind(this)
+        this.handleFieldLeave = this.handleFieldLeave.bind(this)
+        this.handleElementDeletion = this.handleElementDeletion.bind(this)
+        this.inputFieldRef = React.createRef()
+        ipcRenderer.on('listItemAdded', (e, data) => {
+            if (data.table === this.props.table) {
+                this.inputFieldRef.current.setState({value: ''})
+                this.setState({
+                    options: data.list_data,
+                    value: '',
+                    loading: false
+                })
+            }
+        })
+        ipcRenderer.on('listItemDeleted', (e, data) => {
+            if (data.table === this.props.table) {
+                this.inputFieldRef.current.setState({value: ''})
+                this.setState({
+                    options: data.list_data,
+                    value: '',
+                    loading: false
+                })
+            }
+        })
+    }
+
+    componentWillUnmount() {
+        ipcRenderer.removeAllListeners('listItemAdded')
+        ipcRenderer.removeAllListeners('listItemDeleted')
+    }
+
+    handleAddItem(e) {
+        e.preventDefault()
+        this.setState({
+            loading: true
+        }, () => {
+            ipcRenderer.send('addListItem', {value: this.state.value, table: this.props.table})
+        })
+    }
+
+    handleFieldLeave(field, value) {
+        this.setState({
+            value: value
+        })
+    }
+
+    handleElementDeletion(e) {
+        this.setState({
+            loading: true
+        }, () => {
+            const id = Number(e.target.getAttribute('data-id'))
+            ipcRenderer.send('deleteListItem', {table: this.props.table, id: id})
+        })
+    }
+
+    render() {
+        return (
+            <div className="form_list_wrapper" style={this.props.style}>
+                <div className="form_list_controls">
+                    <InputField ref={this.inputFieldRef} type="text" placeholder={this.props.placeholder} initial="" styleExtra={{width: '255px', marginLeft: '0'}} fieldName="addItem" onLeave={this.handleFieldLeave} />
+                    <button className="app_button_blue" style={{marginLeft: '15px', padding: '6px'}} onClick={this.handleAddItem}>Добавить в список</button>
+                </div>
+                <ul className="form_list_items">
+                {!this.state.loading &&
+                    this.state.options.map((option, index) => <li key={index} data-id={option.id} onDoubleClick={this.handleElementDeletion} className="form_list_item">{option.item}</li>)
+                }
+                {this.state.loading &&
+                    <li key={1} style={{position: 'relative', top: '40%'}} className="form_list_item"><LoadingAnim width="35px" height="35px" /></li>
+                }
+                </ul>
+            </div>
+        )
+    }
+}
+
+export { InputField, SelectField, DatePickerField, SelectFieldClassificator, TextAreaField, SearchField, FormList }

@@ -211,7 +211,7 @@ class ModalCloseProblem extends React.Component {
                     <CloseModal className="close_modal close_problem" onClick={this.handleClose}/>
                     <div className="modal_info close_problem">
                         <h2 className="modal_info_text" style={{marginBottom: '15px'}}>{this.props.text}</h2>
-                        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '150px 0 10px 0'}}>
+                        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '200px 0 10px 0'}}>
                             <h2 className="lbl" style={{marginRight: '15px'}}>Дата исполнения:</h2>
                             <DatePickerField datepicked={null} fieldName="fullfil_date" onChoice={this.handleChoice} />
                         </div>

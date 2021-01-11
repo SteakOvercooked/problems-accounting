@@ -174,7 +174,7 @@ body {
     height: 50px;
     position: absolute;
     top: 5%;
-    left:90%;
+    left: 90%;
 }
 
 #close_form > circle {
@@ -852,7 +852,7 @@ body {
 }
 
 .modal_content.close_problem {
-    height: 600px;
+    height: 500px;
     width: 550px;
 }
 
@@ -960,6 +960,7 @@ body {
     cursor: pointer;
     border-radius: 3px;
     display: flex;
+    height: 35px;
 }
 
 .search_option:hover {
@@ -1009,5 +1010,82 @@ body {
 }
 
 .warning_wrapper.close_problem {
-    margin-top: 30%;
+    margin-top: 15%;
+}
+
+#alter_lists_wrapper {
+    background-color: #36393f;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    justify-items: center;
+    align-items: center;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 50px 1fr 1fr;
+    grid-template-areas:
+    ". exit"
+    "first second"
+    "third third";
+}
+
+.form_list_wrapper {
+    width: 450px;
+    height: 70%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #36393f;
+}
+
+.form_list_controls {
+    margin-bottom: 15px;
+    background-color: inherit;
+    width: 100%;
+    height: 20%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.form_list_items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    height: 80%;
+    background-color: #2f3136;
+    width: 100%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+}
+
+.form_list_items::-webkit-scrollbar {
+    background: #2a2b30;
+    width: 5px;
+    border-radius: 4px;
+}
+
+.form_list_items::-webkit-scrollbar-thumb {
+    background: #191a1d;
+    border-radius: 4px;
+}
+
+.form_list_item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #d6d6d6;
+    font-size: 1.1rem;
+    white-space: nowrap;
+    font-family: 'Nunito', sans-serif;
+    border-radius: 5px;
+    outline: 0;
+    height: 35px;
+    cursor: pointer;
+}
+
+.form_list_item:hover {
+    background-color: #7289da;
 }

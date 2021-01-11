@@ -7,10 +7,15 @@ class Navbar extends React.Component {
     constructor(props) {
         super(props)
         this.handleAddItem = this.handleAddItem.bind(this)
+        this.openAlterLists = this.openAlterLists.bind(this)
     }
 
     handleAddItem(e) {
         this.props.onAddItem()
+    }
+
+    openAlterLists(e) {
+        this.props.onOpenAlterLists()
     }
 
     render() {
@@ -18,7 +23,7 @@ class Navbar extends React.Component {
             <div className="navbar">             
                 <AddItem id="add_item" className="btn_nav" onClick={this.handleAddItem} />
                 <MakeReport id="make_report" className="btn_nav" />
-                <Settings id="settings" className="btn_na" />
+                <Settings id="settings" className="btn_na" onClick={this.openAlterLists} />
             </div>
         )
     }

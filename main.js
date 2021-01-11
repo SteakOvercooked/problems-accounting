@@ -130,8 +130,45 @@ function insertData(data_obj, col_count, table) {
         MainDB.run(`INSERT INTO ${table} VALUES(${placeholder_str})`, data_obj, function (err) {
             if (err === null) 
                 resolve(this.lastID)
-            else
+            else 
                 reject(err.message)
+        })
+    })
+}
+
+function getListsData(table, column) {
+    let data = []
+    return new Promise((resolve, reject) => {
+        MainDB.all(`SELECT * FROM ${table}`, (err, rows) => {
+            if (err !== null)
+                reject(err.message)
+            rows.forEach(row => {
+                data.push({
+                    id: row.id,
+                    item: row[column]
+                })
+            })
+            resolve(data)
+        })
+    })
+}
+
+function insertListsData(table, value, column) {
+    return new Promise((resolve, reject) => {
+        MainDB.run(`INSERT INTO ${table} (${column}) VALUES(?)`, value, (err) => {
+            if (err !== null)
+                reject(err.message)
+            resolve()
+        })
+    })
+}
+
+function deleteListsData(table, id) {
+    return new Promise((resolve, reject) => {
+        MainDB.run(`DELETE FROM ${table} WHERE id = ?`, id, (err) => {
+            if (err !== null)
+                reject(err.message)
+            resolve()
         })
     })
 }
@@ -141,6 +178,10 @@ function dateToSQLiteDate(date_obj) {
     const month = date_obj.month + 1 < 10 ? `0${date_obj.month + 1}` : date_obj.month + 1
     return `${date_obj.year}-${month}-${date}`
 }
+
+app.on('before-quit', () => {
+    MainDB.close()
+})
 
 app.on('ready', () => {
     let db = new SQLite.Database('./Классификатор/Классификатор.db')
@@ -201,16 +242,24 @@ ipcMain.on('maximize', (e, args) => {
 ipcMain.on('add_problem', (e, args) => {
     const { form_data, file, existingID } = args
 
-    let insertPerson = null
-    if (existingID === null)
-        insertPerson = insertData({
-            1: null, 2: form_data.cor_fio,
-            3: form_data.cor_fio.toLowerCase(),
-            4: form_data.cor_terr, 5: form_data.cor_addr,
-            6: form_data.cor_tel, 7: form_data.cor_soc
-        }, 7, 'People')
-    else
-        insertPerson = new Promise((resolve, reject) => { resolve(existingID) })
+    const startTransaction = new Promise((resolve, reject) => {
+        MainDB.run('BEGIN TRANSACTION;', (err) => {
+            resolve()
+        })
+    })
+    const insertPerson = startTransaction.then(() => {
+        return new Promise((resolve, reject) => {
+            if (existingID === null)
+                resolve(insertData({
+                    1: null, 2: form_data.cor_fio,
+                    3: form_data.cor_fio.toLowerCase(),
+                    4: form_data.cor_terr, 5: form_data.cor_addr,
+                    6: form_data.cor_tel, 7: form_data.cor_soc
+                }, 7, 'People'))
+            else
+                resolve(existingID)
+        })
+    })
     
     const insertProblem = insertPerson.then(personID => {
         return new Promise((resolve, reject) => {
@@ -226,6 +275,8 @@ ipcMain.on('add_problem', (e, args) => {
             else {
                 const file_ext = file.split('.').pop()
                 FS.readFile(file, (err, data) => {
+                    if (err !== null)
+                        reject(err.message)
                     resolve(insertData({
                         1: null, 2: form_data.prob_num, 3: form_data.leg_branch,
                         4: form_data.respon, 5: form_data.doc_type, 6: data, 7: file_ext,
@@ -236,6 +287,8 @@ ipcMain.on('add_problem', (e, args) => {
                 })
             }
         })
+    }, reason => {
+        MainDB.run('ROLLBACK;')
     })
     insertProblem.then(problemID => {
         insertData({
@@ -243,7 +296,12 @@ ipcMain.on('add_problem', (e, args) => {
             3: form_data.resolut, 4: dateToSQLiteDate(form_data.handover_date),
             5: dateToSQLiteDate(form_data.fullfil_term), 6: null,
             7: null, 8: problemID
-        }, 8, 'Resolutions').then(() => {e.reply('problem_added', null)})
+        }, 8, 'Resolutions').then(() => {
+            e.reply('problem_added', null)
+            MainDB.run('COMMIT;')
+        }, reason => {MainDB.run('ROLLBACK;')})
+    }, reason => {
+        MainDB.run('ROLLBACK;')
     })
 })
 
@@ -299,5 +357,54 @@ ipcMain.on('close_problem', (e, close_data) => {
         })
     }).then(() => {
         e.reply('problem_closed', null)
+    })
+})
+
+ipcMain.on('grab_lists', (e, page) => {
+    let promises = []
+    promises.push(getListsData('Authors', 'author'))
+    promises.push(getListsData('Responsibles', 'responsible'))
+    promises.push(getListsData('LegBranches', 'branch'))
+    Promise.all(promises).then(values => {
+        e.reply('lists_grabbed', {authors: values[0], responsibles: values[1], branches: values[2], page: page})
+    })
+})
+
+ipcMain.on('addListItem', (e, add_data) => {
+    const { value, table } = add_data
+    console.log(`value = ${value}, table = ${table}`)
+    let column = null
+        if (table === 'Responsibles')
+            column = 'responsible'
+        else
+            if (table === 'Authors')
+                column = 'author'
+            else
+                column = 'branch'
+    insertListsData(table, value, column)
+    .then(() => {
+        getListsData(table, column)
+        .then(list_data => {
+            e.reply('listItemAdded', {list_data: list_data, table: table})
+        })
+    })
+})
+
+ipcMain.on('deleteListItem', (e, delete_data) => {
+    const { table, id } = delete_data
+    let column = null
+    if (table === 'Responsibles')
+        column = 'responsible'
+    else
+        if (table === 'Authors')
+            column = 'author'
+        else
+            column = 'branch'
+    deleteListsData(table, id)
+    .then(() => {
+        getListsData(table, column)
+        .then(list_data => {
+            e.reply('listItemDeleted', {list_data: list_data, table: table})
+        })
     })
 })
