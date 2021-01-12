@@ -73,10 +73,12 @@ class AddUserForm extends React.Component {
     }
 
     componentDidMount() {
+        setTimeout(() => {
+            document.querySelector('#user_form').classList.remove('zoomed_out')
+        }, 0)
         this.setState(state => ({
             tabToRender: 'doc_info',
-            activeButton: document.querySelector('.active_tab'),
-            file: null
+            activeButton: document.querySelector('.active_tab')
         }))
     }
 
@@ -90,14 +92,12 @@ class AddUserForm extends React.Component {
                 if (state.tabToRender === 'doc_info')
                     return {
                         tabToRender: 'resol',
-                        activeButton: e.target,
-                        file: state.file
+                        activeButton: e.target
                     }
                 else
                     return {
                         tabToRender: 'doc_info',
-                        activeButton: e.target,
-                        file: state.file
+                        activeButton: e.target
                     }
             })
         }
@@ -248,12 +248,12 @@ class AddUserForm extends React.Component {
     }
 
     handleFormClose(e) {
-        this.props.closeAddUser()
+        this.props.closeAddUser('#user_form')
     }
 
     render() {
         return (
-            <form id="user_form">
+            <form id="user_form" className="zoomed_out">
             {this.state.showModalChoose &&
                 <ModalChooseFromExisting text="Выберите человека:" closeModal={this.handleCloseModal} onPersonChosen={this.handlePersonChosen} />
             }

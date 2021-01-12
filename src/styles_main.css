@@ -4,6 +4,13 @@ body {
     -webkit-user-select: none;
 }
 
+#main_content {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #36393f;
+}
+
 #cntrl_bar {
     height: 24px;
     display: flex;
@@ -62,8 +69,10 @@ body {
 
 #nav_cont_wrapper {
     display: flex;
-    /* background-color: #23272a; */
     background-color: #24272d;
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.1s ease-out;
 }
 
 .btn_nav {
@@ -150,6 +159,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.1s ease-out;
 }
 
 .lbl {
@@ -1021,6 +1033,9 @@ body {
     display: grid;
     justify-items: center;
     align-items: center;
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.1s ease-out;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 50px 1fr 1fr;
     grid-template-areas:
@@ -1088,4 +1103,9 @@ body {
 
 .form_list_item:hover {
     background-color: #7289da;
+}
+
+#nav_cont_wrapper.zoomed_out, #alter_lists_wrapper.zoomed_out, #user_form.zoomed_out {
+    transform: scale(0.7);
+    opacity: 0;
 }

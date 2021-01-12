@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Main } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 const SQLite = require('sqlite3')
 const FS = require('fs')
 
@@ -101,7 +101,7 @@ function getProblems(borders, probs_type) {
         let Problems = []
         MainDB.all(queryProblems(borders[0], borders[1], probs_type), (err, rows) => {
             if (err)
-                console.log(err.message)
+                reject(err.message)
             rows.forEach(row => {
                 const date = row.handover_date
                 const dateFormat = date.substring(8) + '-' + date.substring(5, 7) + '-' + date.substring(0, 4)
@@ -179,6 +179,7 @@ function dateToSQLiteDate(date_obj) {
     return `${date_obj.year}-${month}-${date}`
 }
 
+app.allowRendererProcessReuse = false
 app.on('before-quit', () => {
     MainDB.close()
 })
@@ -372,7 +373,6 @@ ipcMain.on('grab_lists', (e, page) => {
 
 ipcMain.on('addListItem', (e, add_data) => {
     const { value, table } = add_data
-    console.log(`value = ${value}, table = ${table}`)
     let column = null
         if (table === 'Responsibles')
             column = 'responsible'

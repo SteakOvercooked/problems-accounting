@@ -29,6 +29,7 @@ class App extends React.Component {
         this.refreshProblems = this.refreshProblems.bind(this)
         this.openMain = this.openMain.bind(this)
         this.openAlterLists = this.openAlterLists.bind(this)
+        this.controlAnim = this.controlAnim.bind(this)
         ipcRenderer.on('lists_grabbed', (e, result) => {
             this.setState({
                 lists: {
@@ -37,11 +38,25 @@ class App extends React.Component {
                     branches: result.branches
                 }
             }, () => {
-                this.setState({
-                    pageToRender: result.page
-                })
+                this.controlAnim('#nav_cont_wrapper', result.page)
             })
         })
+        ipcRenderer.on('records_deleted', (e, args) => {
+            this.peopleContainerRef.current.refreshData()
+        })
+        ipcRenderer.on('problem_closed', (e, args) => {
+            this.peopleContainerRef.current.refreshData()
+        })
+    }
+
+    componentWillUnmount() {
+        ipcRenderer.removeAllListeners('lists_grabbed')
+        ipcRenderer.removeAllListeners('records_deleted')
+        ipcRenderer.removeAllListeners('problem_closed')
+    }
+
+    componentDidMount() {
+        document.querySelector('#nav_cont_wrapper').classList.remove('zoomed_out')
     }
 
     handleProblemAdded() {
@@ -69,9 +84,6 @@ class App extends React.Component {
             },
             showModalYesNo: true
         })
-        ipcRenderer.on('records_deleted', (e, args) => {
-            this.peopleContainerRef.current.refreshData()
-        })
     }
 
     openModalCP(res_id) {
@@ -80,9 +92,6 @@ class App extends React.Component {
                 res_id: res_id
             },
             showModalCP: true
-        })
-        ipcRenderer.on('problem_closed', (e, args) => {
-            this.peopleContainerRef.current.refreshData()
         })
     }
 
@@ -96,14 +105,29 @@ class App extends React.Component {
         })
     }
 
-    openMain() {
-        this.setState({
-            pageToRender: 'main'
-        })
+    openMain(idFrom) {
+        this.controlAnim(idFrom, 'main')
     }
 
     openAlterLists() {
         ipcRenderer.send('grab_lists', 'alterLists')
+    }
+
+    controlAnim(idFrom, pageTo) {
+        document.querySelector(idFrom).classList.add('zoomed_out')
+        setTimeout(() => {
+            this.setState({
+                pageToRender: pageTo
+            })
+        }, 100)
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        if (prevState.pageToRender !== this.state.pageToRender)
+            if (this.state.pageToRender === 'main')
+                setTimeout(() => {
+                    document.querySelector('#nav_cont_wrapper').classList.remove('zoomed_out')
+                }, 0)
     }
 
     render() {
@@ -111,7 +135,7 @@ class App extends React.Component {
             <div id="main_content">
                 <ControlBar />
                 {this.state.pageToRender === 'main' &&
-                    <div id="nav_cont_wrapper">
+                    <div id="nav_cont_wrapper" className="zoomed_out">
                     {this.state.showModalYesNo &&
                         <ModalYesNo delete_data={this.state.delete_data} text="Вы уверены?" closeModal={this.closeModal} />
                     }

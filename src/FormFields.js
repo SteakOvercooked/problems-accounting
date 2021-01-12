@@ -581,6 +581,12 @@ class SearchField extends React.Component {
         this.handleFocus = this.handleFocus.bind(this)
         this.handleChange = this.handleChange.bind(this)
         this.handleChoice = this.handleChoice.bind(this)
+        ipcRenderer.on('people_grabbed', (ev, people) => {
+            this.setState({
+                wrapped: false,
+                options: people
+            })
+        })
     }
 
     componentWillUnmount() {
@@ -629,12 +635,6 @@ class SearchField extends React.Component {
                 value: e.target.value
             }, () => {
                 ipcRenderer.send('grab_people', e.target.value.toLowerCase())
-                ipcRenderer.on('people_grabbed', (ev, people) => {
-                    this.setState({
-                        wrapped: false,
-                        options: people
-                    })
-                })
             })
         }
     }
@@ -717,11 +717,12 @@ class FormList extends React.Component {
 
     handleAddItem(e) {
         e.preventDefault()
-        this.setState({
-            loading: true
-        }, () => {
-            ipcRenderer.send('addListItem', {value: this.state.value, table: this.props.table})
-        })
+        if (this.state.value !== '')
+            this.setState({
+                loading: true
+            }, () => {
+                ipcRenderer.send('addListItem', {value: this.state.value, table: this.props.table})
+            })
     }
 
     handleFieldLeave(field, value) {
