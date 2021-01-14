@@ -5,6 +5,7 @@ import { ipcRenderer } from 'electron'
 import { Navbar } from './Navbar.js'
 import { PeopleContainer } from './PeopleContainer.js'
 import { AddUserForm } from './AddUserForm.js'
+import { ViewUserForm } from './ViewUserForm.js'
 import { ModalYesNo, ModalCloseProblem } from './ModalWindows.js'
 import { AlterLists } from '../src/AlterLists.js'
 
@@ -17,6 +18,7 @@ class App extends React.Component {
             showModalCP: false,
             delete_data: null,
             close_data: null,
+            view_problem_data: null,
             lists: null,
             problems: props.problems
         }
@@ -47,10 +49,17 @@ class App extends React.Component {
         ipcRenderer.on('problem_closed', (e, args) => {
             this.peopleContainerRef.current.refreshData()
         })
+        ipcRenderer.on('opened_problem_view', (e, data) => {
+            this.setState({
+                view_problem_data: data,
+                pageToRender: 'viewUserProblem'
+            })
+        })
     }
 
     componentWillUnmount() {
         ipcRenderer.removeAllListeners('lists_grabbed')
+        ipcRenderer.removeAllListeners('opened_problem_view')
         ipcRenderer.removeAllListeners('records_deleted')
         ipcRenderer.removeAllListeners('problem_closed')
     }
@@ -71,7 +80,9 @@ class App extends React.Component {
         document.querySelector('.modal_wrapper').classList.add('zoomed_out')
         setTimeout(() => {
             this.setState({
-                [modal_type]: false
+                [modal_type]: false,
+                delete_data: null,
+                close_data: null
             })
         }, 150)
     }
@@ -130,6 +141,10 @@ class App extends React.Component {
                 }, 0)
     }
 
+    openProblem(person_id, res_id, problem_id) {
+        ipcRenderer.send('open_problem_view', {p_id: person_id, prob_id: problem_id, res_id: res_id})
+    }
+
     render() {
         return (
             <div id="main_content">
@@ -144,11 +159,14 @@ class App extends React.Component {
                     }
                         <Navbar onAddItem={this.openAddItem} onOpenAlterLists={this.openAlterLists} />
                         <PeopleContainer refreshProblems={this.refreshProblems} ref={this.peopleContainerRef} onCallForModal={this.openModal}
-                        problems={this.state.problems} onCallForModalCP={this.openModalCP} />
+                        problems={this.state.problems} onCallForModalCP={this.openModalCP} openProblem={this.openProblem} />
                     </div>
                 }
                 {this.state.pageToRender === 'addUser' &&
                     <AddUserForm classif={this.props.classificator} onProblemAdded={this.handleProblemAdded} closeAddUser={this.openMain} lists={this.state.lists} />
+                }
+                {this.state.pageToRender === 'viewUserProblem' &&
+                    <ViewUserForm closeViewUser={this.openMain} form_data={this.state.view_problem_data} />
                 }
                 {this.state.pageToRender === 'alterLists' &&
                     <AlterLists lists={this.state.lists} closeAlterLists={this.openMain} />

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, shell } = require('electron')
 const SQLite = require('sqlite3')
 const FS = require('fs')
 
@@ -179,9 +179,22 @@ function dateToSQLiteDate(date_obj) {
     return `${date_obj.year}-${month}-${date}`
 }
 
+function SQLdateToObject(date_str) {
+    const year = Number(date_str.substring(0, 4))
+    const month = Number(date_str.substring(5, 7)) - 1
+    const date = Number(date_str.substring(9, 11))
+    return {year: year, month: month, date: date}
+}
+
 app.allowRendererProcessReuse = false
-app.on('before-quit', () => {
+app.on('quit', () => {
     MainDB.close()
+    FS.readdir(__dirname + '\\static\\temp_view_files', (err, files) => {
+        if (err === null)
+            files.forEach(file => {
+                FS.unlink(__dirname + '\\static\\temp_view_files\\' + file, err => {})
+            })
+    })
 })
 
 app.on('ready', () => {
@@ -406,5 +419,58 @@ ipcMain.on('deleteListItem', (e, delete_data) => {
         .then(list_data => {
             e.reply('listItemDeleted', {list_data: list_data, table: table})
         })
+    })
+})
+
+ipcMain.on('open_problem_view', (e, open_data) => {
+    const { p_id, prob_id, res_id } = open_data
+    new Promise((resolve, reject) => {
+        MainDB.all(
+            `SELECT * FROM
+            (((SELECT fio, terr, tel, soc, addr, id FROM People WHERE id = ?) as first
+            INNER JOIN
+            (SELECT number, leg_branch, respon, doc_type, extension, sect, subj_matter, theme, problem, sub_problem, choice, desc, person_id, id as prob_id FROM Problems WHERE id = ?) as second
+            ON first.id = second.person_id) as intermed
+            INNER JOIN
+            (SELECT author, resolut_type, handover_date, fullfil_term, fullfil_date, result, problem_id FROM Resolutions WHERE id = ?) as resols
+            ON intermed.prob_id = resols.problem_id)`, p_id, prob_id, res_id, (err, rows) => {
+                if (err === null) {
+                    const row = rows[0]
+                    resolve({
+                        cor_fio: row.fio, cor_terr: row.terr, cor_tel: row.tel,
+                        cor_soc: row.soc, cor_addr: row.addr, prob_num: row.number,
+                        leg_branch: row.leg_branch, respon: row.respon, doc_type: row.doc_type,
+                        ext: row.extension, sect: row.sect, subj_matter: row.subj_matter,
+                        theme: row.theme, problem: row.problem, sub_problem: row.sub_problem,
+                        choice: row.choice, desc: row.desc, author: row.author, resolut: row.resolut_type,
+                        handover_date: row.handover_date === null ? null : SQLdateToObject(row.handover_date),
+                        fullfil_term: row.fullfil_term === null ? null : SQLdateToObject(row.fullfil_term),
+                        fullfil_date: row.fullfil_date === null ? null : SQLdateToObject(row.fullfil_date),
+                        result: row.result, prob_id: row.prob_id
+                    })
+                }
+                else
+                    reject(err.message)
+            })
+    }).then(view_data => {
+        e.reply('opened_problem_view', view_data)
+    })
+})
+
+ipcMain.on('get_file', (e, data) => {
+    const id = data.prob_id
+    const path = __dirname + '/static/temp_view_files/temp.'
+    MainDB.all('SELECT file, extension FROM Problems WHERE id = ?', id, (err, rows) => {
+        if (err === null) {
+            const row = rows[0]
+            FS.writeFile(path + row.extension, row.file, (err) => {
+                if (err === null)
+                    shell.openPath(path + row.extension).then(result => {console.log(result)})
+                else
+                    console.log(err.message)
+            })
+        }
+        else
+            console.log(err.message)
     })
 })

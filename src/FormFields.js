@@ -27,7 +27,7 @@ class InputField extends React.Component {
 
     render() {
         return (
-            <input onChange={this.handleChange} readOnly={this.props.readonly} value={this.state.value} className={`form_field ${this.props.readonly ? "readonly" : ""}`}
+            <input onChange={this.handleChange} readOnly={this.props.readonly} value={this.state.value} className={`form_field ${this.props.readonly ? "readonly" : ""} ${this.props.view ? "view" : ""}`}
             onBlur={this.blurred} type={this.props.type} placeholder={this.props.placeholder} style={this.props.styleExtra} ></input>
         )
     }
@@ -206,7 +206,8 @@ class DatePickerField extends React.Component {
     }
 
     componentDidMount() {
-        this.props.onChoice(this.props.fieldName, this.state.datePicked)
+        if (!this.props.readonly)
+            this.props.onChoice(this.props.fieldName, this.state.datePicked)
     }
 
     parseMonth(month) {
@@ -330,8 +331,8 @@ class DatePickerField extends React.Component {
 
         return (
             <div style={{position:'relative'}}>
-                <div className="chosen_date" onClick={this.handleClick}>
-                    <input className="date_input" value={pickedDateStr} readOnly type="text" placeholder="Выберите дату"
+                <div className={`chosen_date ${this.props.readonly ? "readonly" : ""}`} onClick={this.handleClick}>
+                    <input className="date_input" value={`${this.props.datepicked === null && this.props.dateSensitive ? "" : pickedDateStr}`} readOnly type="text" placeholder="Выберите дату"
                     style={{color:'inherit', backgroundColor:'inherit', fontFamily:'inherit', border:'none', outline:'none', fontSize:'1rem', margin:'0 5px', pointerEvents:'none'}} />
                     <DatePickerPic className="date_picker_pic"/>
                 </div>
@@ -558,7 +559,7 @@ class TextAreaField extends React.Component {
         if (this.props.rdonly)
             elem = <textarea readOnly value={this.state.value} onChange={this.handleChange} className="notation_readonly"></textarea>
         else
-            elem = <textarea value={this.state.value} onChange={this.handleChange} maxLength="256" className="notation" onBlur={this.handleBlur}></textarea>
+            elem = <textarea value={this.state.value} onChange={this.handleChange} maxLength="256" className={`notation ${this.props.view ? "view" : ""}`} onBlur={this.handleBlur}></textarea>
         return (
             elem
         )

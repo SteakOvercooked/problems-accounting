@@ -48,6 +48,7 @@ class PeopleContainer extends React.Component {
         this.callForModal = this.callForModal.bind(this)
         this.refreshData = this.refreshData.bind(this)
         this.callForModalCP = this.callForModalCP.bind(this)
+        this.openProblem = this.openProblem.bind(this)
         this.selectRefs = [React.createRef(), React.createRef()]
         ipcRenderer.on('problems_grabbed', (e, problems) => {
             if (problems.length === 0)
@@ -122,6 +123,10 @@ class PeopleContainer extends React.Component {
         this.props.onCallForModalCP(res_id)
     }
 
+    openProblem(person_id, res_id, problem_id) {
+        this.props.openProblem(person_id, res_id, problem_id)
+    }
+
     render() {
         return (
             <div id="people_cont__main_wrapper">
@@ -150,7 +155,7 @@ class PeopleContainer extends React.Component {
                 minWidth: '860px', height: '60%', minHeight: '250px', borderRadius: '3px'}}>
                 {!this.state.loading && !this.state.isEmpty &&
                     <div id="people_container">
-                        {this.state.problems.map((problem, index) => <ProblemCard onTryDelete={this.callForModal} onTryCloseProblem={this.callForModalCP} key={index}
+                        {this.state.problems.map((problem, index) => <ProblemCard onTryDelete={this.callForModal} onTryCloseProblem={this.callForModalCP} openProblem={this.openProblem} key={index}
                         data={problem} type={this.state.type_filter} />)}
                     </div>
                 }
