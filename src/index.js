@@ -7,7 +7,7 @@ import { PeopleContainer } from './PeopleContainer.js'
 import { AddUserForm } from './AddUserForm.js'
 import { ViewUserForm } from './ViewUserForm.js'
 import { ModalYesNo, ModalCloseProblem } from './ModalWindows.js'
-import { AlterLists } from '../src/AlterLists.js'
+import { AlterLists } from './AlterLists.js'
 
 class App extends React.Component {
     constructor(props) {
@@ -20,6 +20,7 @@ class App extends React.Component {
             close_data: null,
             view_problem_data: null,
             lists: null,
+            type_filter: 'Открытые',
             problems: props.problems
         }
         this.handleProblemAdded = this.handleProblemAdded.bind(this)
@@ -159,7 +160,8 @@ class App extends React.Component {
                     }
                         <Navbar onAddItem={this.openAddItem} onOpenAlterLists={this.openAlterLists} />
                         <PeopleContainer refreshProblems={this.refreshProblems} ref={this.peopleContainerRef} onCallForModal={this.openModal}
-                        problems={this.state.problems} onCallForModalCP={this.openModalCP} openProblem={this.openProblem} />
+                        rememberType={(type) => {this.setState({type_filter: type})}} problems={this.state.problems} onCallForModalCP={this.openModalCP}
+                        openProblem={this.openProblem} type_filter={this.state.type_filter} />
                     </div>
                 }
                 {this.state.pageToRender === 'addUser' &&

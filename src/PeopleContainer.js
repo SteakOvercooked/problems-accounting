@@ -39,7 +39,7 @@ class PeopleContainer extends React.Component {
         this.state = {
             year_filter: new Date().getFullYear(),
             month_filter: new Date().getMonth(),
-            type_filter: 'Открытые',
+            type_filter: this.props.type_filter,
             isEmpty: props.problems.length === 0 ? true : false,
             loading: false,
             problems: this.props.problems
@@ -49,7 +49,6 @@ class PeopleContainer extends React.Component {
         this.refreshData = this.refreshData.bind(this)
         this.callForModalCP = this.callForModalCP.bind(this)
         this.openProblem = this.openProblem.bind(this)
-        this.selectRefs = [React.createRef(), React.createRef()]
         ipcRenderer.on('problems_grabbed', (e, problems) => {
             if (problems.length === 0)
                 this.setState({
@@ -72,6 +71,7 @@ class PeopleContainer extends React.Component {
 
     componentWillUnmount() {
         ipcRenderer.removeAllListeners('problems_grabbed')
+        this.props.rememberType(this.state.type_filter)
     }
 
     parseMonth(index) {
@@ -86,20 +86,6 @@ class PeopleContainer extends React.Component {
         let val = value
         if (field === 'month_filter')
             val = this.parseMonthNameToIndex(value)
-        if (field === 'type_filter') {
-            if (value !== 'Закрытые')
-                this.selectRefs.forEach(item => {
-                    item.current.setState({
-                        blocked: true
-                    })
-                })
-            else
-                this.selectRefs.forEach(item => {
-                    item.current.setState({
-                        blocked: false
-                    })
-                })
-        }
         this.setState({
             [field]: val
         }, () => {
@@ -131,9 +117,9 @@ class PeopleContainer extends React.Component {
         return (
             <div id="people_cont__main_wrapper">
                 <div id="filters">
-                    <SelectField ref={this.selectRefs[0]} fieldName="year_filter" placeholder="Выберите год" options={['2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030']} initial={new Date().getFullYear()} onChoice={this.applyFilter} blocked={true} />
-                    <SelectField ref={this.selectRefs[1]} fieldName="month_filter" placeholder="Выберите месяц" options={['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']} initial={this.parseMonth(new Date().getMonth())} onChoice={this.applyFilter} blocked={true} />
-                    <SelectField fieldName="type_filter" placeholder="Выберите тип" options={['Открытые', 'Закрытые', 'Просроченные']} initial='Открытые' onChoice={this.applyFilter} />
+                    <SelectField fieldName="year_filter" ref={this.selectRefs[0]} placeholder="Выберите год" options={['2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030']} initial={new Date().getFullYear()} onChoice={this.applyFilter} blocked={this.state.type_filter !== 'Закрытые'} />
+                    <SelectField fieldName="month_filter" ref={this.selectRefs[1]} placeholder="Выберите месяц" options={['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']} initial={this.parseMonth(new Date().getMonth())} onChoice={this.applyFilter} blocked={this.state.type_filter !== 'Закрытые'} />
+                    <SelectField fieldName="type_filter" placeholder="Выберите тип" options={['Открытые', 'Закрытые', 'Просроченные']} initial={this.props.type_filter} onChoice={this.applyFilter} />
                 </div>
                 <hr className="line_people_container"></hr>
                 <div id="table_headers">

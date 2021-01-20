@@ -11,14 +11,14 @@ function createMainWindow() {
         minWidth: 1280,
         minHeight: 500,
         frame: false,
-        icon: './static/images/app_icon_64x64.ico',
+        icon: __dirname + '/static/images/app_icon_64x64.ico',
         webPreferences: {
             nodeIntegration: true
         }
     })
 
     MainWindow.loadFile('index.html')
-    MainWindow.webContents.toggleDevTools()
+    //MainWindow.webContents.toggleDevTools()
 }
 
 function queryClassif(ind) {
@@ -187,18 +187,18 @@ function SQLdateToObject(date_str) {
 }
 
 app.allowRendererProcessReuse = false
-app.on('quit', () => {
+app.on('before-quit', (event) => {
     MainDB.close()
-    FS.readdir(__dirname + '\\static\\temp_view_files', (err, files) => {
+    FS.readdir(__dirname + '/static/temp_view_files', (err, files) => {
         if (err === null)
             files.forEach(file => {
-                FS.unlink(__dirname + '\\static\\temp_view_files\\' + file, err => {})
+                FS.unlink(__dirname + '/static/temp_view_files/' + file, err => {})
             })
     })
 })
 
 app.on('ready', () => {
-    let db = new SQLite.Database('./Классификатор/Классификатор.db')
+    let db = new SQLite.Database(__dirname + '/Классификатор/Классификатор.db')
     let promises = []
 
     const prom = new Promise((resolve, reject) => {
@@ -226,7 +226,7 @@ app.on('ready', () => {
     })
     promises.push(prom)
 
-    MainDB = new SQLite.Database('./static/database/MainDB.db')
+    MainDB = new SQLite.Database(__dirname + '/static/database/MainDB.db')
     const currentDate = new Date()
     const borders = getBorders(currentDate.getFullYear(), currentDate.getMonth(), 0)
     promises.push(getProblems(borders, 0))

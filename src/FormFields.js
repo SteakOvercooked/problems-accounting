@@ -40,8 +40,7 @@ class SelectField extends React.Component {
             value: props.initial,
             options: props.options,
             wrapped: true,
-            stillOver: false,
-            blocked: props.blocked
+            stillOver: false
         }
         this.handleChange = this.handleChange.bind(this)
         this.optionClick = this.optionClick.bind(this)
@@ -143,7 +142,7 @@ class SelectField extends React.Component {
     render() {
         return (
             <div className="select_wrapper">
-                <div className={`selected ${this.state.blocked ? "blocked" : ""}`} onClick={this.handleUnwrap}>
+                <div className={`selected ${this.props.blocked ? "blocked" : ""}`} onClick={this.handleUnwrap}>
                      <input type="text" value={this.state.value} onBlur={this.handleBlur} onChange={this.handleChange} className="select_input" placeholder={this.props.placeholder}></input>
                      <Arrow className="arrow_select"/>
                 </div>

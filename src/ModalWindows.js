@@ -2,7 +2,7 @@ import React from 'react'
 import CloseModal from '../static/images/close_modal.svg'
 import Warning from '../static/images/warning.svg'
 import { ipcRenderer } from 'electron'
-import { SearchField, InputField, DatePickerField } from '../src/FormFields.js'
+import { SearchField, InputField, DatePickerField } from './FormFields.js'
 
 class ModalYesNo extends React.Component {
     constructor(props) {

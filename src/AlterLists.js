@@ -1,6 +1,6 @@
 import React from 'react'
 import CloseForm from '../static/images/close_form.svg'
-import { FormList } from '../src/FormFields.js'
+import { FormList } from './FormFields.js'
 
 class AlterLists extends React.Component {
     constructor(props) {

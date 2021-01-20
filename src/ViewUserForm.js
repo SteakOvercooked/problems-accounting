@@ -2,7 +2,6 @@ import React from 'react'
 import { InputField, DatePickerField, TextAreaField } from './FormFields.js'
 import CloseForm from '../static/images/close_form.svg'
 import { ipcRenderer } from 'electron'
-import LoadingAnim from '../static/anim/loading.svg'
 
 class ViewUserForm extends React.Component {
     constructor(props) {
@@ -24,6 +23,18 @@ class ViewUserForm extends React.Component {
             tabToRender: 'doc_info',
             activeButton: document.querySelector('.active_tab')
         }))
+    }
+
+    componentDidUpdate() {
+        const inputs = document.querySelectorAll("input[type='text']")
+        inputs.forEach(item => {
+            const val = item.getAttribute('value')
+            if (val !== null && val !== '')
+                if (val.length < 40)
+                    item.setAttribute('size', item.getAttribute('value').length + 1)
+                else
+                    item.setAttribute('size', 40)
+        })
     }
 
     handleClick(e) {
@@ -83,7 +94,7 @@ class ViewUserForm extends React.Component {
                         {this.state.tabToRender === 'doc_info' &&
                             <div style={{width:'100%', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center'}}>
                                 <div style={{display:'flex', justifyContent:'flex-start', alignItems:'center'}}>
-                                    <InputField type="text" readonly={true} view={true} fieldName="leg_branch" placeholder="Орган власти" styleExtra={{width: '270px'}} initial={this.props.form_data.leg_branch} />
+                                    <InputField type="text" readonly={true} view={true} fieldName="leg_branch" placeholder="Орган власти" initial={this.props.form_data.leg_branch} />
                                     <InputField type="text" readonly={true} view={true} fieldName="respon" placeholder="Ответственный" initial={this.props.form_data.respon} />
                                     <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center'}}>
                                         <InputField type="text" readonly={true} view={true} fieldName="doc_type" placeholder="Вид документа" initial={this.props.form_data.doc_type} />
@@ -111,7 +122,7 @@ class ViewUserForm extends React.Component {
                             <div>
                                 <div style={{display: 'flex', width: '100%', justifyContent: 'center', alignItems: 'center'}}>
                                     <InputField fieldName="author" placeholder="Автор" initial={this.props.form_data.author} type="text" readonly={true} view={true} />
-                                    <InputField fieldName="resolut" placeholder="Резолюция" initial={this.props.form_data.resolut} type="text" readonly={true} view={true} styleExtra={{width: '350px'}} />
+                                    <InputField fieldName="resolut" placeholder="Резолюция" initial={this.props.form_data.resolut} type="text" readonly={true} view={true} />
                                 </div>
                                 <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'flex-start', alignItems:'center', margin:'10px 0px'}}>
                                     <h2 className="lbl" style={{marginRight:'10px'}}>Дата передачи на исполнение:</h2>
@@ -121,7 +132,7 @@ class ViewUserForm extends React.Component {
                                 </div>
                                 {this.props.form_data.result !== null &&
                                     <div style={{backgroundColor:'inherit', width: '100%', display:'flex', justifyContent:'center', alignItems:'center', margin:'10px 0px'}}>
-                                        <InputField fieldName="result" placeholder="Результат" initial={this.props.form_data.result} type="text" readonly={true} />
+                                        <InputField fieldName="result" placeholder="Результат" initial={this.props.form_data.result} type="text" readonly={true} view={true} />
                                         <div style={{backgroundColor:'inherit', display:'flex', justifyContent:'center', alignItems:'center', margin:'10px 0px'}}>
                                             <h2 className="lbl" style={{marginRight:'10px'}}>Исполнен:</h2>
                                             <DatePickerField readonly={true} dateSensitive={true} datepicked={this.props.form_data.fullfil_date} fieldName="fullfil_date" />

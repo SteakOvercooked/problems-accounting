@@ -4,7 +4,7 @@ import CloseForm from '../static/images/close_form.svg'
 import FileAdded from '../static/images/file_added.svg'
 import { ipcRenderer } from 'electron'
 import LoadingAnim from '../static/anim/loading.svg'
-import { ModalChooseFromExisting } from '../src/ModalWindows.js'
+import { ModalChooseFromExisting } from './ModalWindows.js'
 
 class AddUserForm extends React.Component {
     constructor(props) {

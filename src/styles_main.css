@@ -1038,7 +1038,7 @@ body {
 }
 
 .warning_wrapper.close_problem {
-    margin-top: 15%;
+    margin-top: 5%;
 }
 
 #alter_lists_wrapper {
@@ -1124,6 +1124,6 @@ body {
 }
 
 #nav_cont_wrapper.zoomed_out, #alter_lists_wrapper.zoomed_out, #user_form.zoomed_out, #user_form_view.zoomed_out {
-    transform: scale(0.7);
+    transform: scale(0.85);
     opacity: 0;
 }
