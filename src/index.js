@@ -6,7 +6,7 @@ import { Navbar } from './Navbar.js'
 import { PeopleContainer } from './PeopleContainer.js'
 import { AddUserForm } from './AddUserForm.js'
 import { ViewUserForm } from './ViewUserForm.js'
-import { ModalYesNo, ModalCloseProblem } from './ModalWindows.js'
+import { ModalYesNo, ModalCloseProblem, ModalCreateReport } from './ModalWindows.js'
 import { AlterLists } from './AlterLists.js'
 
 class App extends React.Component {
@@ -18,6 +18,7 @@ class App extends React.Component {
             showModalCP: false,
             delete_data: null,
             close_data: null,
+            showCreateReport: false,
             view_problem_data: null,
             lists: null,
             type_filter: 'Открытые',
@@ -33,6 +34,7 @@ class App extends React.Component {
         this.openMain = this.openMain.bind(this)
         this.openAlterLists = this.openAlterLists.bind(this)
         this.controlAnim = this.controlAnim.bind(this)
+        this.openModalCreateReport = this.openModalCreateReport.bind(this)
         ipcRenderer.on('lists_grabbed', (e, result) => {
             this.setState({
                 lists: {
@@ -107,6 +109,12 @@ class App extends React.Component {
         })
     }
 
+    openModalCreateReport() {
+        this.setState({
+            showCreateReport: true
+        })
+    }
+
     openAddItem() {
         ipcRenderer.send('grab_lists', 'addUser')
     }
@@ -158,7 +166,10 @@ class App extends React.Component {
                     {this.state.showModalCP &&
                         <ModalCloseProblem close_data={this.state.close_data} text="Закройте обращение" closeModal={this.closeModal} />
                     }
-                        <Navbar onAddItem={this.openAddItem} onOpenAlterLists={this.openAlterLists} />
+                    {this.state.showCreateReport &&
+                        <ModalCreateReport text="Создание отчета" closeModal={this.closeModal} />
+                    }
+                        <Navbar onAddItem={this.openAddItem} onOpenAlterLists={this.openAlterLists} onCallForCreateReport={this.openModalCreateReport} />
                         <PeopleContainer refreshProblems={this.refreshProblems} ref={this.peopleContainerRef} onCallForModal={this.openModal}
                         rememberType={(type) => {this.setState({type_filter: type})}} problems={this.state.problems} onCallForModalCP={this.openModalCP}
                         openProblem={this.openProblem} type_filter={this.state.type_filter} />

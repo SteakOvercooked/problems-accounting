@@ -1127,3 +1127,59 @@ body {
     transform: scale(0.85);
     opacity: 0;
 }
+
+.tip {
+    position: absolute;
+    font-family: 'Nunito', sans-serif;
+    z-index: 10;
+    background-color: black;
+    border-radius: 5px;
+    color: white;
+    padding: 10px;
+    max-width: 150px;
+    font-size: 0.9rem;
+    transform: scale(1);
+    transition: all 75ms ease-in;
+    opacity: 1;
+}
+
+.tip.animating {
+    opacity: 0;
+    transform: scale(0.7);
+}
+
+.report_choice {
+    max-width: 80px;
+    pointer-events: none;
+}
+
+.wrapper_report_choice {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 35%; 
+    border: 3px solid #7289da;
+    border-radius: 15px;
+    padding: 10px;
+    transition: border-color 150ms ease-in-out;
+}
+
+.wrapper_report_choice.inactive {
+    border-color: #444952;
+}
+
+.wrapper_report_choice.inactive:hover {
+    cursor: pointer;
+    border-color: #5a5f69;
+}
+
+.chosen_date.blocked {
+    background-color: black;
+    pointer-events: none;
+}
+
+.modal_content.create_report {
+    height: 550px;
+    width: 550px;
+}

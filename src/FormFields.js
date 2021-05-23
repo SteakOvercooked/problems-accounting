@@ -330,7 +330,7 @@ class DatePickerField extends React.Component {
 
         return (
             <div style={{position:'relative'}}>
-                <div className={`chosen_date ${this.props.readonly ? "readonly" : ""}`} onClick={this.handleClick}>
+                <div className={`chosen_date ${this.props.readonly ? "readonly" : ""} ${this.props.blocked ? "blocked" : ""}`} onClick={this.handleClick}>
                     <input className="date_input" value={`${this.props.datepicked === null && this.props.dateSensitive ? "" : pickedDateStr}`} readOnly type="text" placeholder="Выберите дату"
                     style={{color:'inherit', backgroundColor:'inherit', fontFamily:'inherit', border:'none', outline:'none', fontSize:'1rem', margin:'0 5px', pointerEvents:'none'}} />
                     <DatePickerPic className="date_picker_pic"/>

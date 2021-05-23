@@ -1,6 +1,8 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron')
 const SQLite = require('sqlite3')
 const FS = require('fs')
+const Docx = require('docx')
+const { VerticalAlign, WidthType, Spacing, TableCell } = require('docx')
 
 let MainDB = null
 let MainWindow;
@@ -11,7 +13,7 @@ function createMainWindow() {
         minWidth: 1280,
         minHeight: 500,
         frame: false,
-        icon: __dirname + '/static/images/app_icon_64x64.ico',
+        icon: './static/images/app_icon_64x64.ico',
         webPreferences: {
             nodeIntegration: true
         }
@@ -189,16 +191,16 @@ function SQLdateToObject(date_str) {
 app.allowRendererProcessReuse = false
 app.on('before-quit', (event) => {
     MainDB.close()
-    FS.readdir(__dirname + '/static/temp_view_files', (err, files) => {
+    FS.readdir('./static/temp_view_files', (err, files) => {
         if (err === null)
             files.forEach(file => {
-                FS.unlink(__dirname + '/static/temp_view_files/' + file, err => {})
+                FS.unlink('./static/temp_view_files/' + file, err => {})
             })
     })
 })
 
 app.on('ready', () => {
-    let db = new SQLite.Database(__dirname + '/Классификатор/Классификатор.db')
+    let db = new SQLite.Database('./Классификатор/Классификатор.db')
     let promises = []
 
     const prom = new Promise((resolve, reject) => {
@@ -226,7 +228,7 @@ app.on('ready', () => {
     })
     promises.push(prom)
 
-    MainDB = new SQLite.Database(__dirname + '/static/database/MainDB.db')
+    MainDB = new SQLite.Database('./static/database/MainDB.db')
     const currentDate = new Date()
     const borders = getBorders(currentDate.getFullYear(), currentDate.getMonth(), 0)
     promises.push(getProblems(borders, 0))
@@ -472,5 +474,307 @@ ipcMain.on('get_file', (e, data) => {
         }
         else
             console.log(err.message)
+    })
+})
+
+function createDocument() {
+    let DOC = new Docx.Document({
+        styles: {
+            paragraphStyles: [{
+                id: "my_style",
+                name: "MYSTYLE",
+                basedOn: "Normal",
+                next: "Normal",
+                run: {
+                    font: "Times New Roman",
+                    size: 44
+                },
+                paragraph: {
+                    alignment: AlignmentType.CENTER
+                }
+            }, {
+                id: "my_date_style",
+                name: "MYDATESTYLE",
+                basedOn: "Normal",
+                next: "Normal",
+                run: {
+                    font: "Times New Roman",
+                    size: 36
+                },
+                paragraph: {
+                    alignment: AlignmentType.CENTER
+                }
+            }, {
+                id: "my_style_table_row",
+                name: "MYSTYLETABLE",
+                basedOn: "Normal",
+                next: "Normal",
+                run: {
+                    font: "Times New Roman",
+                    size: 24
+                },
+                paragraph: {
+                    alignment: AlignmentType.CENTER
+                }
+            }]
+        },
+        sections: []
+    })
+}
+
+ipcMain.on('create_report', (e, data) => {
+    // type = 0 - отчет по всем закрытым и открытым за определенный период
+    let SD = null, ED = null
+    let prom = new Promise((resolve, reject) => {
+        if (data.report_type === 0) {
+            SD = dateToSQLiteDate(data.start_date)
+            ED = dateToSQLiteDate(data.end_date)
+            MainDB.all(`
+            SELECT fio, addr, respon, desc, result, handover_date FROM
+            (
+                (SELECT problem_id, result, handover_date FROM Resolutions WHERE (date(handover_date) BETWEEN date(?) AND date(?))
+                AND ((result IS NOT NULL) OR (result IS NULL AND CAST(julianday('now', 'start of day') - julianday(fullfil_term) AS INT) < 0))) as resolut_res
+                INNER JOIN
+                (SELECT * FROM
+                    (
+                        (SELECT id as person_id, fio, addr FROM People) as people_res
+                        INNER JOIN
+                        (SELECT id as problem_id, person_id, respon, desc FROM Problems) as problems_res
+                        ON people_res.person_id = problems_res.person_id
+                    )
+                ) as middle_res
+                ON resolut_res.problem_id = middle_res.problem_id
+            )
+            `, SD, ED, (err, rows) => {
+                if (err === null) {
+                    resolve(rows)
+                } else {
+                    console.log(err.message)
+                }
+            })
+        } else {
+            MainDB.all(`
+            SELECT fio, addr, respon, desc, CAST(julianday('now', 'start of day') - julianday(fullfil_term) AS INT) as days_left FROM
+            (
+                (SELECT problem_id, result, fullfil_term FROM Resolutions WHERE result IS NULL AND CAST(julianday('now', 'start of day') - julianday(fullfil_term) AS INT) > 0) as resolut_res
+                INNER JOIN
+                (SELECT * FROM
+                    (
+                        (SELECT id as person_id, fio, addr FROM People) as people_res
+                        INNER JOIN
+                        (SELECT id as problem_id, person_id, respon, desc FROM Problems) as problems_res
+                        ON people_res.person_id = problems_res.person_id
+                    )
+                ) as middle_res
+                ON resolut_res.problem_id = middle_res.problem_id
+            )
+            `, (err, rows) => {
+                if (err === null)
+                    resolve(rows)
+                else
+                    console.log(err.message)
+            })
+        }
+    })
+
+    prom.catch(reason => {
+        console.log(reason)
+    })
+
+    prom.then(result => {
+
+        let fieldNames = []
+        let headerRow = []
+        if (data.report_type === 0) {
+            fieldNames = ["handover_date", "fio", "addr", "respon", "desc", "result"]
+            headerNames = ["Дата обращения", "ФИО", "Адрес", "Ответственный", "Описание", "Результат"]
+        }
+        else {
+            fieldNames = ["fio", "addr", "respon", "desc", "days_left"]
+            headerNames = ["ФИО", "Адрес", "Ответственный", "Описание", "Дней просрочено"]
+        }
+        headerNames.forEach(name => {
+            headerRow.push(new Docx.TableCell({
+                children: [
+                    new Docx.Paragraph({
+                        text: name,
+                        style: "my_style_table_row",
+                        spacing: {
+                            line: 350
+                        }
+                    })
+                ],
+                verticalAlign: VerticalAlign.CENTER
+            }))
+        })
+        let tableRows = []
+        tableRows.push(new Docx.TableRow({
+            children: headerRow,
+            tableHeader: true
+        }))
+        result.forEach(row => {
+            let cells = []
+            fieldNames.forEach(name => {
+                cells.push(new Docx.TableCell({
+                    children: [
+                        new Docx.Paragraph({
+                            text: row[[name]].toString(),
+                            style: "my_style_table_row",
+                            spacing: {
+                                line: 350
+                            }
+                        })
+                    ],
+                    verticalAlign: VerticalAlign.CENTER
+                }))
+            })
+            tableRows.push(new Docx.TableRow({
+                children: cells,
+            }))
+        })
+
+        let DOC = null
+        if (data.report_type === 0) {
+            DOC = new Docx.Document({
+                styles: {
+                    paragraphStyles: [{
+                        id: "my_style",
+                        name: "MYSTYLE",
+                        basedOn: "Normal",
+                        next: "Normal",
+                        run: {
+                            font: "Times New Roman",
+                            size: 44
+                        },
+                        paragraph: {
+                            alignment: Docx.AlignmentType.CENTER
+                        }
+                    }, {
+                        id: "my_date_style",
+                        name: "MYDATESTYLE",
+                        basedOn: "Normal",
+                        next: "Normal",
+                        run: {
+                            font: "Times New Roman",
+                            size: 36
+                        },
+                        paragraph: {
+                            alignment: Docx.AlignmentType.CENTER
+                        }
+                    }, {
+                        id: "my_style_table_row",
+                        name: "MYSTYLETABLE",
+                        basedOn: "Normal",
+                        next: "Normal",
+                        run: {
+                            font: "Times New Roman",
+                            size: 24
+                        },
+                        paragraph: {
+                            alignment: Docx.AlignmentType.CENTER
+                        }
+                    }]
+                },
+                sections: [{
+                    children: [
+                        new Docx.Paragraph({
+                            text: "Журнал документов",
+                            style: "my_style",
+                            spacing: {
+                                line: 350
+                            }
+                        }),
+                        new Docx.Paragraph({
+                            text: `С ${SD} по ${ED}`,
+                            style: "my_date_style",
+                            spacing: {
+                                line: 350,
+                                after: 500
+                            }
+                        }),
+                        new Docx.Table({
+                            rows: tableRows,
+                            width: {
+                                size: 100,
+                                type: Docx.WidthType.PERCENTAGE
+                            }
+                        })
+                    ]
+                }]
+            })
+        } else {
+            DOC = new Docx.Document({
+                styles: {
+                    paragraphStyles: [{
+                        id: "my_style",
+                        name: "MYSTYLE",
+                        basedOn: "Normal",
+                        next: "Normal",
+                        run: {
+                            font: "Times New Roman",
+                            size: 44
+                        },
+                        paragraph: {
+                            alignment: Docx.AlignmentType.CENTER
+                        }
+                    }, {
+                        id: "my_date_style",
+                        name: "MYDATESTYLE",
+                        basedOn: "Normal",
+                        next: "Normal",
+                        run: {
+                            font: "Times New Roman",
+                            size: 36
+                        },
+                        paragraph: {
+                            alignment: Docx.AlignmentType.CENTER
+                        }
+                    }, {
+                        id: "my_style_table_row",
+                        name: "MYSTYLETABLE",
+                        basedOn: "Normal",
+                        next: "Normal",
+                        run: {
+                            font: "Times New Roman",
+                            size: 24
+                        },
+                        paragraph: {
+                            alignment: Docx.AlignmentType.CENTER
+                        }
+                    }]
+                },
+                sections: [{
+                    children: [
+                        new Docx.Paragraph({
+                            text: "Журнал документов",
+                            style: "my_style",
+                            spacing: {
+                                line: 350,
+                                after: 500
+                            }
+                        }),
+                        new Docx.Table({
+                            rows: tableRows,
+                            width: {
+                                size: 100,
+                                type: Docx.WidthType.PERCENTAGE
+                            }
+                        })
+                    ]
+                }]
+            })
+        }
+        
+        Docx.Packer.toBuffer(DOC).then((buffer) => {
+            let options = {
+                title: "Сохранить файл как...",
+                filters: [
+                    {name: 'Документ', extensions: ['docx']}
+                ]
+            }
+            let result = dialog.showSaveDialogSync(options)
+            if (result !== undefined)
+                FS.writeFileSync(result, buffer)
+        })
     })
 })

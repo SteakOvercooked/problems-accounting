@@ -117,8 +117,8 @@ class PeopleContainer extends React.Component {
         return (
             <div id="people_cont__main_wrapper">
                 <div id="filters">
-                    <SelectField fieldName="year_filter" ref={this.selectRefs[0]} placeholder="Выберите год" options={['2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030']} initial={new Date().getFullYear()} onChoice={this.applyFilter} blocked={this.state.type_filter !== 'Закрытые'} />
-                    <SelectField fieldName="month_filter" ref={this.selectRefs[1]} placeholder="Выберите месяц" options={['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']} initial={this.parseMonth(new Date().getMonth())} onChoice={this.applyFilter} blocked={this.state.type_filter !== 'Закрытые'} />
+                    <SelectField fieldName="year_filter" placeholder="Выберите год" options={['2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030']} initial={new Date().getFullYear()} onChoice={this.applyFilter} blocked={this.state.type_filter !== 'Закрытые'} />
+                    <SelectField fieldName="month_filter" placeholder="Выберите месяц" options={['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']} initial={this.parseMonth(new Date().getMonth())} onChoice={this.applyFilter} blocked={this.state.type_filter !== 'Закрытые'} />
                     <SelectField fieldName="type_filter" placeholder="Выберите тип" options={['Открытые', 'Закрытые', 'Просроченные']} initial={this.props.type_filter} onChoice={this.applyFilter} />
                 </div>
                 <hr className="line_people_container"></hr>
