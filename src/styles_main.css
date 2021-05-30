@@ -1183,3 +1183,18 @@ body {
     height: 550px;
     width: 550px;
 }
+
+.loading_screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #36393f;
+}
+
+.loading_anim_screen {
+    min-width: 200px;
+    min-height: 200px;
+}

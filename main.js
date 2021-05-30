@@ -5,7 +5,21 @@ const Docx = require('docx')
 const { VerticalAlign, WidthType, Spacing, TableCell } = require('docx')
 
 let MainDB = null
+let LoadingWindow;
 let MainWindow;
+
+function createLoadingWindow() {
+    LoadingWindow = new BrowserWindow({
+        width: 600,
+        height: 400,
+        resizable: false,
+        frame: false,
+        show: false
+    })
+
+    LoadingWindow.loadFile('loading.html')
+}
+
 function createMainWindow() {
     MainWindow = new BrowserWindow({
         width: 1366,
@@ -16,7 +30,8 @@ function createMainWindow() {
         icon: './static/images/app_icon_64x64.ico',
         webPreferences: {
             nodeIntegration: true
-        }
+        },
+        show: false
     })
 
     MainWindow.loadFile('index.html')
@@ -191,16 +206,22 @@ function SQLdateToObject(date_str) {
 app.allowRendererProcessReuse = false
 app.on('before-quit', (event) => {
     MainDB.close()
-    FS.readdir('./static/temp_view_files', (err, files) => {
+    FS.readdir(__dirname + '/static/temp_view_files', (err, files) => {
         if (err === null)
             files.forEach(file => {
-                FS.unlink('./static/temp_view_files/' + file, err => {})
+                FS.unlink(__dirname + '/static/temp_view_files/' + file, err => {})
             })
     })
 })
 
 app.on('ready', () => {
-    let db = new SQLite.Database('./Классификатор/Классификатор.db')
+
+    createLoadingWindow()
+    LoadingWindow.once('ready-to-show', () => {
+        LoadingWindow.show()
+    })
+
+    let db = new SQLite.Database(__dirname + '/Классификатор/Классификатор.db')
     let promises = []
 
     const prom = new Promise((resolve, reject) => {
@@ -228,7 +249,7 @@ app.on('ready', () => {
     })
     promises.push(prom)
 
-    MainDB = new SQLite.Database('./static/database/MainDB.db')
+    MainDB = new SQLite.Database(__dirname + '/static/database/MainDB.db')
     const currentDate = new Date()
     const borders = getBorders(currentDate.getFullYear(), currentDate.getMonth(), 0)
     promises.push(getProblems(borders, 0))
@@ -236,6 +257,11 @@ app.on('ready', () => {
     Promise.all(promises)
     .then((values) => {
         createMainWindow()
+        MainWindow.once('ready-to-show', () => {
+            MainWindow.show()
+            LoadingWindow.destroy()
+            LoadingWindow = null
+        })
         MainWindow.webContents.on('did-finish-load', () => {
             MainWindow.webContents.send('start_up_data', {classif: values[0], problems: values[1]})
             db.close()
@@ -476,51 +502,6 @@ ipcMain.on('get_file', (e, data) => {
             console.log(err.message)
     })
 })
-
-function createDocument() {
-    let DOC = new Docx.Document({
-        styles: {
-            paragraphStyles: [{
-                id: "my_style",
-                name: "MYSTYLE",
-                basedOn: "Normal",
-                next: "Normal",
-                run: {
-                    font: "Times New Roman",
-                    size: 44
-                },
-                paragraph: {
-                    alignment: AlignmentType.CENTER
-                }
-            }, {
-                id: "my_date_style",
-                name: "MYDATESTYLE",
-                basedOn: "Normal",
-                next: "Normal",
-                run: {
-                    font: "Times New Roman",
-                    size: 36
-                },
-                paragraph: {
-                    alignment: AlignmentType.CENTER
-                }
-            }, {
-                id: "my_style_table_row",
-                name: "MYSTYLETABLE",
-                basedOn: "Normal",
-                next: "Normal",
-                run: {
-                    font: "Times New Roman",
-                    size: 24
-                },
-                paragraph: {
-                    alignment: AlignmentType.CENTER
-                }
-            }]
-        },
-        sections: []
-    })
-}
 
 ipcMain.on('create_report', (e, data) => {
     // type = 0 - отчет по всем закрытым и открытым за определенный период
