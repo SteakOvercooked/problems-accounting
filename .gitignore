@@ -1,6 +1,2 @@
 node_modules/
-Классификатор/
-static/database/
-static/temp_view_files/
-release_builds/
 dist/
